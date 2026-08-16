@@ -1,25 +1,40 @@
 import os
 
+lang_markers = {
+    'Python': ['requirements.txt', '.py'],
+    'JavaScript': ['package.json', '.js'],
+    'Java': ['pom.xml', '.java'],
+    'C#': ['.csproj', '.cs'],
+    'Ruby': ['Gemfile', '.rb'],
+    'PHP': ['composer.json', '.php'],
+    'Go': ['go.mod', '.go'],
+    'Rust': ['Cargo.toml', '.rs'],
+    'C++': ['CMakeLists.txt', '.cpp', '.h'],
+    'C': ['Makefile', '.c', '.h'],
+}
 
-files = os.listdir("C:\\Users\\Igor\\Desktop\\Job-Seeker")
-print(files)
+def detect_stack(path) -> dict:
 
-def detect_stack():
+    files = os.listdir(path)
+    print(files)
+
     stack = {
     'language': None,
+    'framework': None,
     }
 
-    if "requirements.txt" in files:
-        print("There is a requirements.txt file!")
-
-    if any(f.endswith('.py') for f in files):
-        print('Python is here!')
-        stack['language'] = 'Python'
+    for lang, markers in lang_markers.items():
+        if any(f.endswith(marker) for f in files for marker in markers):
+            stack['language'] = lang
+            break
         
-
     try:
-        with open("C:\\Users\\Igor\\Desktop\\Job-Seeker\\requirements.txt", "r") as f:
+        with open(f"{path}\\requirements.txt", "r") as f:
             content = f.read()
             print(content)
     except FileNotFoundError as e:
         print(f'Error occurred: {e}')
+
+    return stack
+
+detect_stack("C:\\Users\\Igor\\Desktop\\Job-Seeker")
