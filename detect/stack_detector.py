@@ -13,6 +13,19 @@ lang_markers = {
     'C': ['Makefile', '.c', '.h'],
 }
 
+manifest_files = {
+    'Python': 'requirements.txt',
+    'JavaScript': 'package.json',
+    'Java': 'pom.xml',
+    'C#': '.csproj',
+    'Ruby': 'Gemfile',
+    'PHP': 'composer.json',
+    'Go': 'go.mod',
+    'Rust': 'Cargo.toml',
+    'C++': 'CMakeLists.txt',
+    'C': 'Makefile',
+}
+
 def detect_stack(path) -> dict:
 
     files = os.listdir(path)
@@ -28,17 +41,9 @@ def detect_stack(path) -> dict:
             stack['language'] = lang
             break
 
-    if stack['language'] == 'Python':
+    if stack['language'] in manifest_files:
         try:
-            with open(os.path.join(path, "requirements.txt"), "r") as f:
-                content = f.read()
-                print(content)
-        except FileNotFoundError as e:
-            print(f'Error occurred: {e}')
-
-    elif stack['language'] == 'JavaScript':
-        try:
-            with open(os.path.join(path, "package.json"), "r") as f:
+            with open(os.path.join(path, manifest_files[stack['language']]), "r") as f:
                 content = f.read()
                 print(content)
         except FileNotFoundError as e:
