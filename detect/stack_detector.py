@@ -27,13 +27,22 @@ def detect_stack(path) -> dict:
         if any(f.endswith(marker) for f in files for marker in markers):
             stack['language'] = lang
             break
-        
-    try:
-        with open(f"{path}\\requirements.txt", "r") as f:
-            content = f.read()
-            print(content)
-    except FileNotFoundError as e:
-        print(f'Error occurred: {e}')
+
+    if stack['language'] is 'Python':
+        try:
+            with open(os.path.join(path, "requirements.txt"), "r") as f:
+                content = f.read()
+                print(content)
+        except FileNotFoundError as e:
+            print(f'Error occurred: {e}')
+
+    elif stack['language'] is 'JavaScript':
+        try:
+            with open(os.path.join(path, "package.json"), "r") as f:
+                content = f.read()
+                print(content)
+        except FileNotFoundError as e:
+            print(f'Error occurred: {e}')
 
     return stack
 
