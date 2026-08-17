@@ -28,7 +28,7 @@ def detect_stack(path) -> dict:
             stack['language'] = lang
             break
 
-    if stack['language'] is 'Python':
+    if stack['language'] == 'Python':
         try:
             with open(os.path.join(path, "requirements.txt"), "r") as f:
                 content = f.read()
@@ -36,7 +36,7 @@ def detect_stack(path) -> dict:
         except FileNotFoundError as e:
             print(f'Error occurred: {e}')
 
-    elif stack['language'] is 'JavaScript':
+    elif stack['language'] == 'JavaScript':
         try:
             with open(os.path.join(path, "package.json"), "r") as f:
                 content = f.read()
