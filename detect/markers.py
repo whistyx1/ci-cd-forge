@@ -25,14 +25,20 @@ manifest_files = {
 }
 
 framework_markers = {
-    'Django': ['manage.py', 'settings.py'],
-    'Flask': ['app.py', 'flask'],
-    'Express': ['app.js', 'express'],
-    'Spring': ['spring'],
-    'ASP.NET': ['aspnet'],
-    'Rails': ['rails'],
-    'Laravel': ['laravel'],
-    'Symfony': ['symfony'],
-    'Gin': ['gin'],
-    'Rocket': ['rocket'],
+    'Python': {
+        'Django': ['manage.py', 'settings.py'],
+        'Flask': ['app.py', 'requirements.txt'],
+        'FastAPI': ['main.py', 'requirements.txt'],
+    },
+    'JavaScript': {
+        'React': ['package.json', 'src/index.js'],
+        'Vue': ['package.json', 'src/main.js'],
+        'Angular': ['package.json', 'src/main.ts'],
+    },
+    'Java': {
+        'Spring': ['pom.xml', 'src/main/java'],
+    },
+    'C#': {
+        'ASP.NET': ['.csproj', 'Startup.cs'],
+    },
 }
