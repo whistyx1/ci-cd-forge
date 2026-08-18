@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 lang_markers = {
     'Python': ['requirements.txt', '.py'],
@@ -27,9 +27,14 @@ manifest_files = {
 }
 
 def detect_stack(path) -> dict:
+    path = Path(path)
 
-    files = os.listdir(path)
-    print(files)
+    if path.exists() and path.is_dir():
+        files = list(path.iterdir())
+        print(files)
+    else:
+        print(f"The provided path '{path}' is not a valid directory.")
+        return None
 
     stack = {
     'language': None,
@@ -37,18 +42,16 @@ def detect_stack(path) -> dict:
     }
 
     for lang, markers in lang_markers.items():
-        if any(f.endswith(marker) for f in files for marker in markers):
+        if any(f.name.endswith(marker) for f in files for marker in markers):
             stack['language'] = lang
             break
 
     if stack['language'] in manifest_files:
         try:
-            with open(os.path.join(path, manifest_files[stack['language']]), "r") as f:
+            with open(path / manifest_files[stack['language']], "r") as f:
                 content = f.read()
                 print(content)
         except FileNotFoundError as e:
             print(f'Error occurred: {e}')
 
     return stack
-
-detect_stack("C:\\Users\\Igor\\Desktop\\Job-Seeker")
