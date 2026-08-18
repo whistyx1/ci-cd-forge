@@ -1,8 +1,9 @@
 from pathlib import Path
 from detect.markers import lang_markers
+from typing import Optional
 
 
-def detect_language(path) -> dict:
+def detect_language(path: str) -> Optional[str]:
     path = Path(path)
 
     if path.exists() and path.is_dir():
