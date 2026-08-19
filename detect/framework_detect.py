@@ -1,9 +1,15 @@
 from detect.markers import manifest_files, framework_markers
+from parse.parse_package_json import parse_package_json
+from parse.parse_requirements import parse_requirements
 from pathlib import Path
 from typing import Optional
 
 def detect_framework(path: str, lang: str) -> Optional[str]:
     path = Path(path)
+    parsers = {
+        'Python': parse_requirements,
+        'JavaScript': parse_package_json,
+    }
 
     framework = None
 
@@ -11,12 +17,14 @@ def detect_framework(path: str, lang: str) -> Optional[str]:
         try:
             with open(path / manifest_files[lang], "r") as f:
                 content = f.read()
-                print(f"Content of {manifest_files[lang]}: {content}")  # Debugging line
-                fram_dict = framework_markers.get(lang, {})
-                for fw, markers in fram_dict.items():
-                    if any(marker in content.lower() for marker in markers):
-                        framework = fw
-                        break
+                parser_func = parsers.get(lang)
+                if parser_func:
+                    packages = parser_func(content)
+                    fram_dict = framework_markers.get(lang, {})
+                    for fw, markers in fram_dict.items():
+                        if any(marker in packages for marker in markers):
+                            framework = fw
+                            break
         except FileNotFoundError as e:
             print(f'Error occurred: {e}')
 
