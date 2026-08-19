@@ -8,7 +8,6 @@ def detect_language(path: str) -> Optional[str]:
 
     if path.exists() and path.is_dir():
         files = list(path.iterdir())
-        print(files)
     else:
         print(f"The provided path '{path}' is not a valid directory.")
         return None

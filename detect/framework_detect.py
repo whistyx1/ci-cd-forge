@@ -11,9 +11,10 @@ def detect_framework(path: str, lang: str) -> Optional[str]:
         try:
             with open(path / manifest_files[lang], "r") as f:
                 content = f.read()
+                print(f"Content of {manifest_files[lang]}: {content}")  # Debugging line
                 fram_dict = framework_markers.get(lang, {})
                 for fw, markers in fram_dict.items():
-                    if any(marker in content for marker in markers):
+                    if any(marker in content.lower() for marker in markers):
                         framework = fw
                         break
         except FileNotFoundError as e:
