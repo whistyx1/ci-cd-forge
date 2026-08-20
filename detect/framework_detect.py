@@ -6,6 +6,13 @@ from typing import Optional
 
 def detect_framework(path: str, lang: str) -> Optional[str]:
     path = Path(path)
+
+    if path.exists() and path.is_dir():
+        files = list(path.iterdir())
+    else:
+        print(f"The provided path '{path}' is not a valid directory.")
+        return None
+
     parsers = {
         'Python': parse_requirements,
         'JavaScript': parse_package_json,
@@ -22,7 +29,7 @@ def detect_framework(path: str, lang: str) -> Optional[str]:
                     packages = parser_func(content)
                     fram_dict = framework_markers.get(lang, {})
                     for fw, markers in fram_dict.items():
-                        if any(marker in packages for marker in markers):
+                        if any(marker in packages for marker in markers) or any(marker == f.name for f in files for marker in markers):
                             framework = fw
                             break
         except FileNotFoundError as e:
