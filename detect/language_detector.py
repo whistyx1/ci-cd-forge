@@ -5,12 +5,7 @@ from typing import Optional
 
 def detect_language(path: str) -> Optional[str]:
     path = Path(path)
-
-    if path.exists() and path.is_dir():
-        files = list(path.iterdir())
-    else:
-        print(f"The provided path '{path}' is not a valid directory.")
-        return None
+    files = list(path.iterdir())
 
     language = None
 
