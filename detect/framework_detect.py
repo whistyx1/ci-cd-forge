@@ -2,10 +2,9 @@ from detect.markers import manifest_files, framework_markers
 from parse.parse_package_json import parse_package_json
 from parse.parse_requirements import parse_requirements
 from pathlib import Path
-from typing import Optional
 import json
 
-def detect_framework(path: str, lang: str) -> Optional[str]:
+def detect_framework(path: str, lang: str) -> list[str]:
     path = Path(path)
     files = list(path.iterdir())
 
@@ -14,7 +13,7 @@ def detect_framework(path: str, lang: str) -> Optional[str]:
         'JavaScript': parse_package_json,
     }
 
-    framework = None
+    frameworks = []
 
     if lang in manifest_files:
         try:
@@ -26,11 +25,10 @@ def detect_framework(path: str, lang: str) -> Optional[str]:
                     fram_dict = framework_markers.get(lang, {})
                     for fw, markers in fram_dict.items():
                         if any(marker in packages for marker in markers) or any(marker == f.name for f in files for marker in markers):
-                            framework = fw
-                            break
+                            frameworks.append(fw)
         except FileNotFoundError as e:
             print(f'Error occurred: {e}')
         except json.JSONDecodeError as e:
             print(f'Error occurred while parsing {manifest_files[lang]}: {e}')
 
-    return framework
+    return frameworks
