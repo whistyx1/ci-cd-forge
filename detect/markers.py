@@ -45,4 +45,8 @@ framework_markers = {
     'C++': {
         'Qt': ['.pro',],
     },
+    'PHP': {
+        'Laravel': ['laravel/framework', 'artisan',],
+        'Symfony': ['symfony/symfony',],
+    }
 }
