@@ -3,6 +3,7 @@ from parse.parse_package_json import parse_package_json
 from parse.parse_requirements import parse_requirements
 from pathlib import Path
 from typing import Optional
+import json
 
 def detect_framework(path: str, lang: str) -> Optional[str]:
     path = Path(path)
@@ -34,5 +35,7 @@ def detect_framework(path: str, lang: str) -> Optional[str]:
                             break
         except FileNotFoundError as e:
             print(f'Error occurred: {e}')
+        except json.JSONDecodeError as e:
+            print(f'Error occurred while parsing {manifest_files[lang]}: {e}')
 
     return framework
