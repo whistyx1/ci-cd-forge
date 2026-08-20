@@ -3,8 +3,9 @@ from detect.framework_detect import detect_framework
 
 
 def create_stack(path: str) -> dict:
+    language = detect_language(path)
     return {
-        'language': detect_language(path),
-        'framework': detect_framework(path, detect_language(path))
+        'language': language,
+        'framework': detect_framework(path, language)
     }
 
