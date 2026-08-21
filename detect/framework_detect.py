@@ -1,4 +1,5 @@
 from detect.markers import manifest_files, framework_markers
+from parse.parse_csproj import parse_csproj
 from parse.parse_gemfile import parse_gemfile
 from parse.parse_package_json import parse_package_json
 from parse.parse_requirements import parse_requirements
@@ -21,6 +22,7 @@ def detect_framework(path: str, lang: str) -> list[str]:
         'Rust': parse_cargo_toml,
         'Java': parse_pom_xml,
         'Ruby': parse_gemfile,
+        'C#': parse_csproj,
     }
 
     frameworks = []
