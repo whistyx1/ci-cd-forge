@@ -48,5 +48,11 @@ framework_markers = {
     'PHP': {
         'Laravel': ['laravel/framework', 'artisan',],
         'Symfony': ['symfony/symfony',],
-    }
+    },
+    'Go': {
+        'Gin': ['github.com/gin-gonic/gin',],
+        'Echo': ['github.com/labstack/echo',],
+        'Fiber': ['github.com/gofiber/fiber',],
+        'Chi': ['github.com/go-chi/chi',],
+    },
 }
