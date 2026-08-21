@@ -29,11 +29,16 @@ framework_markers = {
         'Django': ['manage.py', 'django',],
         'Flask': ['flask',],
         'FastAPI': ['fastapi',],
+        'Pyramid': ['pyramid',],
+        'Tornado': ['tornado',],
     },
     'JavaScript': {
         'React': ['react',],
         'Angular': ['angular', '@angular',],
         'Vue': ['vue',],
+        'Express': ['express',],
+        'Next.js': ['next',],
+        'Nest.js': ['@nestjs',],
    
     },
     'Java': {
@@ -54,5 +59,10 @@ framework_markers = {
         'Echo': ['github.com/labstack/echo',],
         'Fiber': ['github.com/gofiber/fiber',],
         'Chi': ['github.com/go-chi/chi',],
+    },
+    'Rust': {
+        'Rocket': ['rocket',],
+        'Actix': ['actix-web',],
+        'Axum': ['axum',],
     },
 }
