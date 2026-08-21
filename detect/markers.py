@@ -46,7 +46,8 @@ framework_markers = {
         'Hibernate': ['hibernate-core'],
     },
     'C#': {
-        'ASP.NET': [ 'Startup.cs', 'Microsoft.AspNetCore',],
+        'ASP.NET': ['Microsoft.AspNetCore.Mvc', 'Microsoft.AspNetCore.App'],
+        'Blazor': ['Microsoft.AspNetCore.Components.WebAssembly', 'Microsoft.AspNetCore.Blazor'],
     },
     'C++': {
         'Qt': ['.pro',],
