@@ -66,4 +66,8 @@ framework_markers = {
         'Actix': ['actix-web',],
         'Axum': ['axum',],
     },
+    'Ruby': {
+        'Rails': ['rails',],
+        'Sinatra': ['sinatra',],
+    }
 }
