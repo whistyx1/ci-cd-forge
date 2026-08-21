@@ -2,6 +2,7 @@ from detect.markers import manifest_files, framework_markers
 from parse.parse_package_json import parse_package_json
 from parse.parse_requirements import parse_requirements
 from parse.parse_composer_json import parse_composer_json
+from parse.parse_go_mod import parse_go_mod
 from pathlib import Path
 import json
 
@@ -13,6 +14,7 @@ def detect_framework(path: str, lang: str) -> list[str]:
         'Python': parse_requirements,
         'JavaScript': parse_package_json,
         'PHP': parse_composer_json,
+        'Go': parse_go_mod,
     }
 
     frameworks = []
