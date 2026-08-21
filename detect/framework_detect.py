@@ -3,6 +3,7 @@ from parse.parse_package_json import parse_package_json
 from parse.parse_requirements import parse_requirements
 from parse.parse_composer_json import parse_composer_json
 from parse.parse_go_mod import parse_go_mod
+from parse.parse_pom_xml import parse_pom_xml
 from pathlib import Path
 import json
 
@@ -15,6 +16,7 @@ def detect_framework(path: str, lang: str) -> list[str]:
         'JavaScript': parse_package_json,
         'PHP': parse_composer_json,
         'Go': parse_go_mod,
+        'Java': parse_pom_xml,
     }
 
     frameworks = []
