@@ -50,7 +50,8 @@ framework_markers = {
         'Blazor': ['microsoft.aspnetcore.components.webassembly', 'microsoft.aspnetcore.blazor'],
     },
     'C++': {
-        'Qt': ['.pro',],
+        'Qt': ['qt6', 'qt5', '.pro'],
+        'Boost': ['boost'],
     },
     'PHP': {
         'Laravel': ['laravel/framework', 'artisan',],
