@@ -37,7 +37,8 @@ framework_markers = {
    
     },
     'Java': {
-        'Spring': ['spring', 'application.properties',],
+        'Spring': ['spring-boot-starter-web', 'spring-boot-starter'],
+        'Hibernate': ['hibernate-core'],
     },
     'C#': {
         'ASP.NET': [ 'Startup.cs', 'Microsoft.AspNetCore',],
