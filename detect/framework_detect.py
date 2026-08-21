@@ -1,4 +1,5 @@
 from detect.markers import manifest_files, framework_markers
+from parse.parse_gemfile import parse_gemfile
 from parse.parse_package_json import parse_package_json
 from parse.parse_requirements import parse_requirements
 from parse.parse_composer_json import parse_composer_json
@@ -19,6 +20,7 @@ def detect_framework(path: str, lang: str) -> list[str]:
         'Go': parse_go_mod,
         'Rust': parse_cargo_toml,
         'Java': parse_pom_xml,
+        'Ruby': parse_gemfile,
     }
 
     frameworks = []
