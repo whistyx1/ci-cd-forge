@@ -13,4 +13,3 @@ def find_projects(root_path: str, max_depth: int = 3) -> list[Path]:
         if any(f in manifest_files.values() for f in files):
             file_paths.append(Path(current_dir))
     return file_paths
-print(find_projects('C:\\Users\\Igor\\Desktop\\test_mono'))
