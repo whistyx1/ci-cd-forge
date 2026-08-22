@@ -71,5 +71,8 @@ framework_markers = {
     'Ruby': {
         'Rails': ['rails',],
         'Sinatra': ['sinatra',],
-    }
+    },
+    'C': {
+        'GTK': ['gtk-3', 'gtk-x11-2.0'],
+    },
 }
