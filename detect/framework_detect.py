@@ -8,6 +8,7 @@ from parse.parse_go_mod import parse_go_mod
 from parse.parse_cargo_toml import parse_cargo_toml
 from parse.parse_pom_xml import parse_pom_xml
 from parse.parse_cmake import parse_cmake
+from parse.parse_makefile import parse_makefile
 from pathlib import Path
 import json
 
@@ -25,6 +26,7 @@ def detect_framework(path: str, lang: str) -> list[str]:
         'Ruby': parse_gemfile,
         'C#': parse_csproj,
         'C++': parse_cmake,
+        'C': parse_makefile,
     }
 
     frameworks = []
