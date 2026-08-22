@@ -1,18 +1,20 @@
 from detect.language_detector import detect_language
 from detect.framework_detect import detect_framework
+from detect.project_finder import find_projects
 from pathlib import Path
 
 
-def create_stack(path: str) -> dict:
+def create_stack(path: str) -> list[dict]:
     path_obj = Path(path)
     if not path_obj.exists() or not path_obj.is_dir():
         print(f"The provided path '{path}' is not a valid directory.")
-        return {
-            'language': None,
-            'framework': None
-        }
-    language = detect_language(path)
-    return {
-        'language': language,
-        'framework': detect_framework(path, language)
-    }
+        return
+    stacks = []
+    for project_path in find_projects(path):
+        lang = detect_language(str(project_path))
+        framework = detect_framework(str(project_path), lang)
+        relative_path = project_path.relative_to(path)
+        path_display = 'root' if relative_path == Path('.') else f'root/{relative_path}'
+        proj_dict = {'path': path_display, 'language(s)': lang, 'framework(s)': framework}
+        stacks.append(proj_dict)
+    return stacks
