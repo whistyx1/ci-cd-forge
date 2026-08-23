@@ -12,7 +12,7 @@ from parse.parse_makefile import parse_makefile
 from pathlib import Path
 import json
 
-def detect_framework(path: str, lang: str) -> list[str]:
+def detect_framework(path: str, lang: str) -> tuple[list[dict], list[str]]:
     path = Path(path)
     files = list(path.iterdir())
 
@@ -30,6 +30,7 @@ def detect_framework(path: str, lang: str) -> list[str]:
     }
 
     frameworks = []
+    packages = []
 
     if lang in manifest_files:
         try:
@@ -40,11 +41,27 @@ def detect_framework(path: str, lang: str) -> list[str]:
                     packages = parser_func(content)
                     fram_dict = framework_markers.get(lang, {})
                     for fw, markers in fram_dict.items():
-                        if any(marker in packages for marker in markers) or any(marker == f.name for f in files for marker in markers):
-                            frameworks.append(fw)
+                        matched_value = None
+                        is_package_match = False
+                        for m in markers:
+                            if m in packages: 
+                                matched_value = m
+                                is_package_match = True
+                                break
+                        if not matched_value:
+                            for file in files:
+                                for m in markers:
+                                    if m == file.name:
+                                        matched_value = file.name
+                                        break
+                                if matched_value:
+                                    break
+                        if matched_value:
+                            source = manifest_files[lang] if is_package_match else matched_value
+                            frameworks.append({'name': fw, 'source': source, 'matched': matched_value})
         except FileNotFoundError as e:
             print(f'Error occurred: {e}')
         except json.JSONDecodeError as e:
             print(f'Error occurred while parsing {manifest_files[lang]}: {e}')
 
-    return frameworks
+    return frameworks, packages
