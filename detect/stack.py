@@ -12,9 +12,14 @@ def create_stack(path: str) -> list[dict]:
     stacks = []
     for project_path in find_projects(path):
         lang, matched_file = detect_language(str(project_path))
-        framework = detect_framework(str(project_path), lang)
+        framework, package = detect_framework(str(project_path), lang)
         relative_path = project_path.relative_to(path)
         path_display = 'root' if relative_path == Path('.') else f'root/{relative_path}'
-        proj_dict = {'path': path_display, 'language(s)': lang, 'framework(s)': framework, 'language source file': matched_file}
+        proj_dict = {
+            'path': path_display,
+            'language(s)': lang,
+            'framework(s)': framework,
+            'language source file': matched_file,
+            'dependencies': package,}
         stacks.append(proj_dict)
     return stacks
