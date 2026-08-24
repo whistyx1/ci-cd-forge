@@ -1,6 +1,7 @@
 from detect.language_detector import detect_language
 from detect.framework_detect import detect_framework
 from detect.project_finder import find_projects
+from detect.markers import manifest_files
 from pathlib import Path
 
 
@@ -20,6 +21,8 @@ def create_stack(path: str) -> list[dict]:
             'language(s)': lang,
             'framework(s)': framework,
             'language source file': matched_file,
-            'dependencies': package,}
+            'dependencies': package,
+            'manifest_file': manifest_files.get(lang),
+            }
         stacks.append(proj_dict)
     return stacks
