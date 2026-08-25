@@ -10,6 +10,10 @@ def find_projects(root_path: str, max_depth: int = 3) -> list[Path]:
         depth = len(Path(current_dir).parts) - len(Path(root_path).parts)
         if depth >= max_depth:
             subdirs[:] = [] 
-        if any(f in manifest_files.values() for f in files):
+        if any(
+            f in manifest_files.values()
+            or Path(f).suffix in manifest_files.values()
+            for f in files
+        ):
             file_paths.append(Path(current_dir))
     return file_paths
