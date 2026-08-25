@@ -1,3 +1,4 @@
+
 def detect_cmd(lang, frameworks, files):
     entry_file_priority = {
         'Python': ['main.py', 'app.py', 'run.py'],
@@ -15,7 +16,7 @@ def detect_cmd(lang, frameworks, files):
             break
 
     if not command:
-        for cmd in entry_file_priority.get(lang):
+        for cmd in entry_file_priority.get(lang, []):
             for f in files:
                 if cmd == f.name:
                     command = f'python {cmd}'
@@ -23,5 +24,3 @@ def detect_cmd(lang, frameworks, files):
             if command:
                 break
     return command
-                
-detect_cmd('Python', [{'name': 'Django',}], [])
