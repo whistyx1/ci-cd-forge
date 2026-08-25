@@ -1,7 +1,5 @@
 import sys
 import json
-from detect.language_detector  import detect_language
-from detect.framework_detect import detect_framework
 from detect.stack import create_stack
 
 if __name__ == "__main__":
