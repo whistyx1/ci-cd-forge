@@ -13,7 +13,7 @@ def create_stack(path: str) -> list[dict]:
     stacks = []
     for project_path in find_projects(path):
         lang, matched_file = detect_language(str(project_path))
-        framework, package = detect_framework(
+        framework, package, errors = detect_framework(
             str(project_path),
             lang,
             manifest_name=matched_file,
@@ -29,6 +29,7 @@ def create_stack(path: str) -> list[dict]:
             'dependencies': package,
             'manifest_file': matched_file,
             'entry_command': detect_cmd(lang, framework, files),
+            'errors': errors,
             }
         stacks.append(proj_dict)
     return stacks
