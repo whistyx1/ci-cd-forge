@@ -48,9 +48,12 @@ def detect_framework(
                         matched_value = None
                         is_package_match = False
                         for m in markers:
-                            if m in packages: 
-                                matched_value = m
-                                is_package_match = True
+                            for package in packages:
+                                if m == package or package.startswith(f"{m}/"):
+                                    matched_value = package
+                                    is_package_match = True
+                                    break
+                            if matched_value:
                                 break
                         if not matched_value:
                             for file in files:

@@ -44,3 +44,43 @@ class TestCreateStack(unittest.TestCase):
                     }
                 ],
             )
+
+    def test_detects_frameworks_from_scoped_npm_packages(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            manifest_path = project_path / "package.json"
+            manifest_path.write_text(
+                """
+            {
+                "dependencies": {
+                    "@angular/core": "^20.0.0",
+                    "@nestjs/core": "^11.0.0"
+                }
+            }
+            """.strip(),
+                encoding="utf-8",
+            )
+            result = create_stack(temp_dir)
+            self.assertEqual(len(result), 1)
+
+            stack = result[0]
+            self.assertEqual(
+                stack["dependencies"],
+                ["@angular/core", "@nestjs/core"],
+            )
+
+            self.assertEqual(
+                stack["framework(s)"],
+                [
+                    {
+                        "name": "Angular",
+                        "source": "package.json",
+                        "matched": "@angular/core",
+                    },
+                    {
+                        "name": "Nest.js",
+                        "source": "package.json",
+                        "matched": "@nestjs/core",
+                    },
+                ],
+            )
