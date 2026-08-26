@@ -84,3 +84,17 @@ class TestCreateStack(unittest.TestCase):
                     },
                 ],
             )
+
+    def test_prioritizes_manifest_over_ambiguous_extension(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / "common.h").touch()
+            (project_path / "Makefile").touch()
+
+            result = create_stack(temp_dir)
+            self.assertEqual(len(result), 1)
+
+            stack = result[0]
+            self.assertEqual(stack["language(s)"], "C")
+            self.assertEqual(stack["language source file"], "Makefile")
+            self.assertEqual(stack["manifest_file"], "Makefile")
