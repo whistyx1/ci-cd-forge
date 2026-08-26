@@ -1,4 +1,6 @@
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -98,3 +100,27 @@ class TestCreateStack(unittest.TestCase):
             self.assertEqual(stack["language(s)"], "C")
             self.assertEqual(stack["language source file"], "Makefile")
             self.assertEqual(stack["manifest_file"], "Makefile")
+
+    def test_reports_invalid_package_json_without_stdout(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            manifest_path = project_path / "package.json"
+            manifest_path.write_text("{invalid json}", encoding="utf-8")
+
+            stdout = StringIO()
+
+            with redirect_stdout(stdout):
+                result = create_stack(temp_dir)
+
+            self.assertEqual(len(result), 1)
+            self.assertEqual(stdout.getvalue(), "")
+
+            self.assertEqual(
+                result[0]["errors"],
+                [
+                    {
+                        "file": "package.json",
+                        "message": "Invalid manifest format",
+                    }
+                ],
+            )

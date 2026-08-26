@@ -16,7 +16,7 @@ def detect_framework(
     path: str,
     lang: str,
     manifest_name: str,
-) -> tuple[list[dict], list[str]]:
+) -> tuple[list[dict], list[str], list[dict]]:
     path = Path(path)
     files = list(path.iterdir())
 
@@ -35,6 +35,7 @@ def detect_framework(
 
     frameworks = []
     packages = []
+    errors = []
 
     if lang in manifest_files:
         try:
@@ -66,9 +67,19 @@ def detect_framework(
                         if matched_value:
                             source = manifest_name if is_package_match else matched_value
                             frameworks.append({'name': fw, 'source': source, 'matched': matched_value})
-        except FileNotFoundError as e:
-            print(f'Error occurred: {e}')
-        except json.JSONDecodeError as e:
-            print(f'Error occurred while parsing {manifest_name}: {e}')
+        except json.JSONDecodeError:
+            errors.append(
+                {
+                    "file": manifest_name,
+                    "message": "Invalid manifest format",
+                }
+            )
+        except FileNotFoundError:
+            errors.append(
+                {
+                    "file": manifest_name,
+                    "message": "Manifest file not found",
+                }
+            )
 
-    return frameworks, packages
+    return frameworks, packages, errors
