@@ -12,7 +12,11 @@ from parse.parse_makefile import parse_makefile
 from pathlib import Path
 import json
 
-def detect_framework(path: str, lang: str) -> tuple[list[dict], list[str]]:
+def detect_framework(
+    path: str,
+    lang: str,
+    manifest_name: str,
+) -> tuple[list[dict], list[str]]:
     path = Path(path)
     files = list(path.iterdir())
 
@@ -34,7 +38,7 @@ def detect_framework(path: str, lang: str) -> tuple[list[dict], list[str]]:
 
     if lang in manifest_files:
         try:
-            with open(path / manifest_files[lang], "r") as f:
+            with open(path / manifest_name, "r") as f:
                 content = f.read()
                 parser_func = parsers.get(lang)
                 if parser_func:
@@ -57,11 +61,11 @@ def detect_framework(path: str, lang: str) -> tuple[list[dict], list[str]]:
                                 if matched_value:
                                     break
                         if matched_value:
-                            source = manifest_files[lang] if is_package_match else matched_value
+                            source = manifest_name if is_package_match else matched_value
                             frameworks.append({'name': fw, 'source': source, 'matched': matched_value})
         except FileNotFoundError as e:
             print(f'Error occurred: {e}')
         except json.JSONDecodeError as e:
-            print(f'Error occurred while parsing {manifest_files[lang]}: {e}')
+            print(f'Error occurred while parsing {manifest_name}: {e}')
 
     return frameworks, packages
