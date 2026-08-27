@@ -147,3 +147,36 @@ class TestCreateStack(unittest.TestCase):
                     }
                 ],
             )
+
+    def test_reports_invalid_toml_as_structured_error(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            manifest_file = project_path / "Cargo.toml"
+            manifest_file.write_text("empty toml", encoding="utf-8")
+
+            stdout = StringIO()
+
+            with redirect_stdout(stdout):
+                result = create_stack(temp_dir)
+
+            self.assertEqual(len(result), 1)
+            self.assertEqual(stdout.getvalue(), "")
+
+            self.assertEqual(
+                result[0],
+                {
+                    "path": "root",
+                    "language(s)": "Rust",
+                    "framework(s)": [],
+                    "language source file": "Cargo.toml",
+                    "dependencies": [],
+                    "manifest_file": "Cargo.toml",
+                    "entry_command": None,
+                    "errors": [
+                        {
+                            "file": "Cargo.toml",
+                            "message": "Invalid manifest format",
+                        }
+                    ],
+                },
+            )

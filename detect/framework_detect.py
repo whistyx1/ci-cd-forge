@@ -1,4 +1,5 @@
 import json
+import tomllib
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -70,7 +71,7 @@ def detect_framework(
                         if matched_value:
                             source = manifest_name if is_package_match else matched_value
                             frameworks.append({'name': fw, 'source': source, 'matched': matched_value})
-        except (json.JSONDecodeError, ET.ParseError):
+        except (json.JSONDecodeError, ET.ParseError, tomllib.TOMLDecodeError):
             errors.append(
                 {
                     "file": manifest_name,
