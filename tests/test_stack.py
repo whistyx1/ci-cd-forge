@@ -124,3 +124,26 @@ class TestCreateStack(unittest.TestCase):
                     }
                 ],
             )
+
+    def test_reports_invalid_csproj_as_structured_error(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            manifest_path = project_path / "Backend.csproj"
+            manifest_path.write_text("<Project>", encoding="utf-8")
+            stdout = StringIO()
+
+            with redirect_stdout(stdout):
+                result = create_stack(temp_dir)
+
+            self.assertEqual(len(result), 1)
+            self.assertEqual(stdout.getvalue(), "")
+
+            self.assertEqual(
+                result[0]["errors"],
+                [
+                    {
+                        "file": "Backend.csproj",
+                        "message": "Invalid manifest format",
+                    }
+                ],
+            )
