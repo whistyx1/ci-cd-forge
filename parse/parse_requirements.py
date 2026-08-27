@@ -5,7 +5,7 @@ def parse_requirements(content: str) -> list[str]:
     stripped_requirements = [req.strip() for req in requirements if req.strip()]
     package_names = []
     for req in stripped_requirements:
-        if req.startswith('-r') or req.startswith('--requirement'):
+        if req.startswith('-r') or req.startswith('--requirement') or req.startswith('git+'):
             continue
         match = re.match(r'^[a-zA-Z0-9_.-]+', req)
         if match:
