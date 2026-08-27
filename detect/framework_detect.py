@@ -1,3 +1,7 @@
+import json
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
 from detect.markers import manifest_files, framework_markers
 from parse.parse_csproj import parse_csproj
 from parse.parse_gemfile import parse_gemfile
@@ -9,8 +13,7 @@ from parse.parse_cargo_toml import parse_cargo_toml
 from parse.parse_pom_xml import parse_pom_xml
 from parse.parse_cmake import parse_cmake
 from parse.parse_makefile import parse_makefile
-from pathlib import Path
-import json
+
 
 def detect_framework(
     path: str,
@@ -67,7 +70,7 @@ def detect_framework(
                         if matched_value:
                             source = manifest_name if is_package_match else matched_value
                             frameworks.append({'name': fw, 'source': source, 'matched': matched_value})
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, ET.ParseError):
             errors.append(
                 {
                     "file": manifest_name,
