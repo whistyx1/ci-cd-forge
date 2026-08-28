@@ -4,23 +4,24 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from detect.markers import manifest_files, framework_markers
+from parse.dependency import Dependency
+from parse.parse_cargo_toml import parse_cargo_toml
+from parse.parse_cmake import parse_cmake
+from parse.parse_composer_json import parse_composer_json
 from parse.parse_csproj import parse_csproj
 from parse.parse_gemfile import parse_gemfile
-from parse.parse_package_json import parse_package_json
-from parse.parse_requirements import parse_requirements
-from parse.parse_composer_json import parse_composer_json
 from parse.parse_go_mod import parse_go_mod
-from parse.parse_cargo_toml import parse_cargo_toml
-from parse.parse_pom_xml import parse_pom_xml
-from parse.parse_cmake import parse_cmake
 from parse.parse_makefile import parse_makefile
+from parse.parse_package_json import parse_package_json
+from parse.parse_pom_xml import parse_pom_xml
+from parse.parse_requirements import parse_requirements
 
 
 def detect_framework(
     path: str,
     lang: str,
     manifest_name: str,
-) -> tuple[list[dict], list[str], list[dict]]:
+) -> tuple[list[dict], list[Dependency], list[dict]]:
     path = Path(path)
     files = list(path.iterdir())
 
@@ -53,9 +54,11 @@ def detect_framework(
                         matched_value = None
                         is_package_match = False
                         for m in markers:
-                            for package in packages:
-                                package_name = package["name"] if isinstance(package, dict) else package
-                                if m == package_name or package_name.startswith(f"{m}/"):
+                            for dependency in packages:
+                                package_name = dependency['name']
+                                if m == package_name or package_name.startswith(
+                                    f"{m}/"
+                                ):
                                     matched_value = package_name
                                     is_package_match = True
                                     break
@@ -71,7 +74,13 @@ def detect_framework(
                                     break
                         if matched_value:
                             source = manifest_name if is_package_match else matched_value
-                            frameworks.append({'name': fw, 'source': source, 'matched': matched_value})
+                            frameworks.append(
+                                {
+                                    'name': fw,
+                                    'source': source,
+                                    'matched': matched_value,
+                                }
+                            )
         except (json.JSONDecodeError, ET.ParseError, tomllib.TOMLDecodeError):
             errors.append(
                 {
