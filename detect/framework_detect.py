@@ -54,8 +54,9 @@ def detect_framework(
                         is_package_match = False
                         for m in markers:
                             for package in packages:
-                                if m == package or package.startswith(f"{m}/"):
-                                    matched_value = package
+                                package_name = package["name"] if isinstance(package, dict) else package
+                                if m == package_name or package_name.startswith(f"{m}/"):
+                                    matched_value = package_name
                                     is_package_match = True
                                     break
                             if matched_value:

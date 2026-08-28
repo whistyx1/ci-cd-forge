@@ -68,7 +68,8 @@ class TestCreateStack(unittest.TestCase):
             stack = result[0]
             self.assertEqual(
                 stack["dependencies"],
-                ["@angular/core", "@nestjs/core"],
+                [{"name": "@angular/core", "version": "^20.0.0"},
+                {"name": "@nestjs/core", "version": "^11.0.0"}],
             )
 
             self.assertEqual(

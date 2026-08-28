@@ -21,7 +21,15 @@ class TestParseJson(unittest.TestCase):
         }
         content = json.dumps(content)
         result = parse_package_json(content)
-        self.assertEqual(result, ["express", "axios", "jest", "typescript"])
+        self.assertEqual(
+            result,
+            [
+                {"name": "express", "version": "^4.19.2"},
+                {"name": "axios", "version": "^1.7.2"},
+                {"name": "jest", "version": "^29.7.0"},
+                {"name": "typescript", "version": "^5.4.5"},
+            ],
+        )
 
     def test_parse_composer_json(self):
         content = {
@@ -37,4 +45,11 @@ class TestParseJson(unittest.TestCase):
         }
         content = json.dumps(content)
         result = parse_composer_json(content)
-        self.assertEqual(result, ["php", "monolog/monolog", "phpunit/phpunit"])
+        self.assertEqual(
+            result,
+            [
+                {"name": "php", "version": ">=8.1"},
+                {"name": "monolog/monolog", "version": "^3.0"},
+                {"name": "phpunit/phpunit", "version": "^10.0"},
+            ],
+        )
