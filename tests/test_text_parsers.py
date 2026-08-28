@@ -50,7 +50,18 @@ class TestTextParsers(unittest.TestCase):
             require github.com/whistyx1/film-trecker v1.15.0
         """
         result = parse_go_mod(content)
-        self.assertEqual(result, ["github.com/gin-gonic/gin", "github.com/stretchr/testify", "golang.org/x/crypto", "github.com/whistyx1/film-trecker"])
+        self.assertEqual(
+            result,
+            [
+                {"name": "github.com/gin-gonic/gin", "version": "v1.10.0"},
+                {"name": "github.com/stretchr/testify", "version": "v1.9.0"},
+                {"name": "golang.org/x/crypto", "version": "v0.21.0"},
+                {
+                    "name": "github.com/whistyx1/film-trecker",
+                    "version": "v1.15.0",
+                },
+            ],
+        )
 
     def test_gemfile_parser(self):
         content = """
