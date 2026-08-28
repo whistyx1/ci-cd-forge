@@ -31,9 +31,14 @@ class TestCreateStack(unittest.TestCase):
             self.assertEqual(stack["language(s)"], "C#")
             self.assertEqual(stack["language source file"], "Backend.csproj")
             self.assertEqual(stack["manifest_file"], "Backend.csproj")
-            self.assertIn(
-                "microsoft.aspnetcore.mvc",
+            self.assertEqual(
                 stack["dependencies"],
+                [
+                    {
+                        "name": "microsoft.aspnetcore.mvc",
+                        "version": "2.2.0",
+                    }
+                ],
             )
 
             self.assertEqual(
