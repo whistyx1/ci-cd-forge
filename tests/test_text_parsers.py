@@ -70,7 +70,10 @@ class TestTextParsers(unittest.TestCase):
             gem 'Aws-S3', '~> 1.0'
         """
         result = parse_gemfile(content)
-        self.assertEqual(result, [
-            "nokogiri",
-            "aws-s3",
-        ])
+        self.assertEqual(
+            result,
+            [
+                {"name": "nokogiri", "version": None},
+                {"name": "aws-s3", "version": "~> 1.0"},
+            ],
+        )
