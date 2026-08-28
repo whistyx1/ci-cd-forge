@@ -25,7 +25,15 @@ class TestTextParsers(unittest.TestCase):
             -r requirements-dev.txt
         """
         result = parse_requirements(content)
-        self.assertEqual(result, ["requests", "pandas", "numpy", "matplotlib"])
+        self.assertEqual(
+            result,
+            [
+                {"name": "requests", "version": "==2.31.0"},
+                {"name": "pandas", "version": ">=2.0.0"},
+                {"name": "numpy", "version": "~=1.25.2"},
+                {"name": "matplotlib", "version": None},
+            ],
+        )
 
     def test_go_mod_parser(self):
         content = """

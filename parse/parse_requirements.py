@@ -1,16 +1,25 @@
 import re
 
-def parse_requirements(content: str) -> list[str]:
+from parse.dependency import Dependency
+
+
+def parse_requirements(content: str) -> list[Dependency]:
     requirements = content.splitlines()
     stripped_requirements = [req.strip() for req in requirements if req.strip()]
-    package_names = []
+    dependencies = []
     for req in stripped_requirements:
         if req.startswith('-r') or req.startswith('--requirement') or req.startswith('git+'):
             continue
         match = re.match(r'^[a-zA-Z0-9_.-]+', req)
         if match:
-            package_names.append(match.group().lower())
+            name = match.group().lower()
+            version = req[match.end():].strip() or None
+            dependencies.append(
+                {
+                    "name": name,
+                    "version": version,
+                },
+            )
         else:
             continue
-    
-    return package_names
+    return dependencies
