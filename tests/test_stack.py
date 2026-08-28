@@ -31,9 +31,14 @@ class TestCreateStack(unittest.TestCase):
             self.assertEqual(stack["language(s)"], "C#")
             self.assertEqual(stack["language source file"], "Backend.csproj")
             self.assertEqual(stack["manifest_file"], "Backend.csproj")
-            self.assertIn(
-                "microsoft.aspnetcore.mvc",
+            self.assertEqual(
                 stack["dependencies"],
+                [
+                    {
+                        "name": "microsoft.aspnetcore.mvc",
+                        "version": "2.2.0",
+                    }
+                ],
             )
 
             self.assertEqual(
@@ -68,7 +73,8 @@ class TestCreateStack(unittest.TestCase):
             stack = result[0]
             self.assertEqual(
                 stack["dependencies"],
-                ["@angular/core", "@nestjs/core"],
+                [{"name": "@angular/core", "version": "^20.0.0"},
+                {"name": "@nestjs/core", "version": "^11.0.0"}],
             )
 
             self.assertEqual(

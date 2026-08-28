@@ -25,7 +25,15 @@ class TestTextParsers(unittest.TestCase):
             -r requirements-dev.txt
         """
         result = parse_requirements(content)
-        self.assertEqual(result, ["requests", "pandas", "numpy", "matplotlib"])
+        self.assertEqual(
+            result,
+            [
+                {"name": "requests", "version": "==2.31.0"},
+                {"name": "pandas", "version": ">=2.0.0"},
+                {"name": "numpy", "version": "~=1.25.2"},
+                {"name": "matplotlib", "version": None},
+            ],
+        )
 
     def test_go_mod_parser(self):
         content = """
@@ -42,7 +50,18 @@ class TestTextParsers(unittest.TestCase):
             require github.com/whistyx1/film-trecker v1.15.0
         """
         result = parse_go_mod(content)
-        self.assertEqual(result, ["github.com/gin-gonic/gin", "github.com/stretchr/testify", "golang.org/x/crypto", "github.com/whistyx1/film-trecker"])
+        self.assertEqual(
+            result,
+            [
+                {"name": "github.com/gin-gonic/gin", "version": "v1.10.0"},
+                {"name": "github.com/stretchr/testify", "version": "v1.9.0"},
+                {"name": "golang.org/x/crypto", "version": "v0.21.0"},
+                {
+                    "name": "github.com/whistyx1/film-trecker",
+                    "version": "v1.15.0",
+                },
+            ],
+        )
 
     def test_gemfile_parser(self):
         content = """
@@ -51,7 +70,10 @@ class TestTextParsers(unittest.TestCase):
             gem 'Aws-S3', '~> 1.0'
         """
         result = parse_gemfile(content)
-        self.assertEqual(result, [
-            "nokogiri",
-            "aws-s3",
-        ])
+        self.assertEqual(
+            result,
+            [
+                {"name": "nokogiri", "version": None},
+                {"name": "aws-s3", "version": "~> 1.0"},
+            ],
+        )

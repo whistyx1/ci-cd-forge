@@ -1,8 +1,21 @@
 import json
 
-def parse_composer_json(content: str) -> list[str]:
+from parse.dependency import Dependency
+
+
+def parse_composer_json(content: str) -> list[Dependency]:
     json_packages = []
     data = json.loads(content)
-    json_packages.extend([str(key).lower() for key in data.get('require', {}).keys()])
-    json_packages.extend([str(key).lower() for key in data.get('require-dev', {}).keys()])
+    json_packages.extend([
+        {
+            "name": str(name).lower(),
+            "version": version,
+        }
+        for name, version in data.get('require', {}).items()])
+    json_packages.extend([
+        {
+            "name": str(name).lower(),
+            "version": version,
+        }
+        for name, version in data.get('require-dev', {}).items()])
     return json_packages
