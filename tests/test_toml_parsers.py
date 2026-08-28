@@ -17,7 +17,16 @@ class TestTomlParser(unittest.TestCase):
 
             [dev-dependencies]
             Criterion = "0.5"
+
+            LocalLib = { path = "../local-lib" }
         """
         result = parse_cargo_toml(content)
-        self.assertEqual(len(result), 3)
-        self.assertEqual(result, ["serde", "tokio", "criterion"])
+        self.assertEqual(
+            result,
+            [
+                {"name": "serde", "version": "1.0"},
+                {"name": "tokio", "version": "1.0"},
+                {"name": "criterion", "version": "0.5"},
+                {"name": "locallib", "version": None},
+            ],
+        )
