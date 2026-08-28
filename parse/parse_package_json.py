@@ -1,6 +1,9 @@
 import json
 
-def parse_package_json(content: str) -> list[dict[str, str]]:
+from parse.dependency import Dependency
+
+
+def parse_package_json(content: str) -> list[Dependency]:
     json_packages = []
     data = json.loads(content)
     json_packages.extend([
