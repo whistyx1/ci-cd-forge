@@ -51,7 +51,11 @@ class TestCliEndToEnd(unittest.TestCase):
                         {'name': 'requests', 'version': '==2.32.3'},
                     ],
                     'manifest_file': 'requirements.txt',
-                    'entry_command': 'python manage.py runserver 0.0.0.0:8000',
+                    'commands': {
+                        'install_command': 'python -m pip install -r requirements.txt',
+                        'build_command': None,
+                        'start_command': 'python manage.py runserver 0.0.0.0:8000',
+                    },
                     'errors': [],
                 },
             )
