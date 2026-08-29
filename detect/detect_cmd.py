@@ -1,5 +1,5 @@
 import json
-
+import re
 
 def _empty_commands():
     return {
@@ -99,6 +99,30 @@ def _detect_python_commands(frameworks, file_names):
         'start_command': start_command,
     }
 
+def _detect_go_commands(files, file_names):
+    if 'go.mod' not in file_names:
+        return _empty_commands()
+
+    for file in files:
+        if file.suffix == '.go':
+            file_content = file.read_text(encoding='utf-8')
+            package_match = re.search(
+                r'(?m)^\s*package\s+main\s*$',
+                file_content,
+            )
+
+            main_function_match = re.search(
+                r'(?m)^\s*func\s+main\s*\(\s*\)',
+                file_content,
+            )
+            if package_match and main_function_match:
+                return {
+                    'install_command': 'go mod download',
+                    'build_command': 'go build -o app .',
+                    'start_command': './app',
+                }
+    return _empty_commands()
+
 
 def detect_cmd(lang, frameworks, files):
     file_names = {file.name for file in files}
@@ -108,5 +132,8 @@ def detect_cmd(lang, frameworks, files):
 
     if lang == 'Python':
         return _detect_python_commands(frameworks, file_names)
+
+    if lang == 'Go':
+        return _detect_go_commands(files, file_names)
 
     return _empty_commands()

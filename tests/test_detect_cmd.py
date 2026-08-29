@@ -215,3 +215,68 @@ class TestDetectCmd(unittest.TestCase):
                     'start_command': None,
                 }
             )
+
+    def test_detects_go_application_commands(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            go_mod_path = project_path / 'go.mod'
+            main_go_path = project_path / 'main.go'
+            go_mod_path.write_text(
+                '''
+                module example.com/my-service
+
+                go 1.22
+                '''.strip(),
+                encoding='utf-8'
+            )
+            main_go_path.write_text(
+                '''
+                    package main
+
+                    func main() {
+                    }
+                '''.strip(),
+                encoding='utf-8'
+            )
+            result = detect_cmd(
+                    lang='Go',
+                    frameworks=[],
+                    files=list(project_path.iterdir())
+                )
+            self.assertEqual(
+                result,
+                {
+                    'install_command': 'go mod download',
+                    'build_command': 'go build -o app .',
+                    'start_command': './app',
+                }
+            )
+
+    def test_does_not_generate_start_command_for_go_library(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            go_mod_path = project_path / 'go.mod'
+            library_path = project_path / 'library.go'
+            library_path.write_text(
+                '''
+                    package library
+
+                    func Add(a int, b int) int {
+                        return a + b
+                    }
+                '''.strip(),
+                encoding='utf-8'
+            )
+            result = detect_cmd(
+                    lang='Go',
+                    frameworks=[],
+                    files=list(project_path.iterdir())
+                )
+            self.assertEqual(
+                result,
+                {
+                    'install_command': None,
+                    'build_command': None,
+                    'start_command': None,
+                }
+            )
