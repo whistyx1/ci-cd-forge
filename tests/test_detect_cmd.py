@@ -319,3 +319,81 @@ class TestDetectCmd(unittest.TestCase):
                     'start_command': './target/release/api-service',
                 }
             )
+
+    def test_detects_sinatra_commands(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            gemfile_path = project_path / 'Gemfile'
+            app_rb_path = project_path / 'app.rb'
+            gemfile_path.write_text(
+                '''
+                    source 'https://rubygems.org'
+
+                    gem 'sinatra'
+                '''.strip(),
+                encoding='utf-8'
+            )
+            app_rb_path.write_text(
+                '''
+                require 'sinatra'
+
+                get '/' do
+                'Hello'
+                end
+                '''.strip(),
+                encoding='utf-8'
+            )
+            result = detect_cmd(
+                lang='Ruby',
+                frameworks=[
+                    {
+                        'name': 'Sinatra',
+                        'source': 'Gemfile',
+                        'matched': 'sinatra',
+                    }
+                ],
+                files=list(project_path.iterdir())
+            )
+            self.assertEqual(
+                result,
+                {
+                    'install_command': 'bundle install',
+                    'build_command': None,
+                    'start_command': 'bundle exec ruby app.rb',
+                }
+            )
+
+    def test_detects_rails_commands(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            gemfile_path = project_path / 'Gemfile'
+            gemfile_path.write_text(
+                '''
+                    source 'https://rubygems.org'
+
+                    gem 'sinatra'
+                '''.strip(),
+                encoding='utf-8'
+            )
+            bin_path = project_path / 'bin'
+            bin_path.mkdir()
+            (bin_path / 'rails').touch()
+            result = detect_cmd(
+                lang='Ruby',
+                frameworks=[
+                    {
+                        'name': 'Rails',
+                        'source': 'Gemfile',
+                        'matched': 'rails',
+                    }
+                ],
+                files=list(project_path.iterdir())
+            )
+            self.assertEqual(
+                result,
+                {
+                    'install_command': 'bundle install',
+                    'build_command': None,
+                    'start_command': 'bin/rails server -b 0.0.0.0',
+                }
+            )

@@ -148,6 +148,37 @@ def _detect_rust_commands(files, file_names):
         'start_command': f'./target/release/{package_name}',
     }
 
+def _detect_ruby_commands(frameworks, files, file_names):
+    install_command = None
+    build_command = None
+    start_command = None
+    gemfile_path = None
+    entry_files = ['app.rb', 'main.rb', 'run.rb']
+    if 'Gemfile' not in file_names:
+        return _empty_commands()
+    install_command = 'bundle install'
+
+    for file in files:
+        if file.name == 'Gemfile':
+            gemfile_path = file
+            break
+    rails_path = gemfile_path.parent / 'bin' / 'rails'
+    for framework in frameworks:
+        if framework['name'] == 'Rails' and rails_path.is_file():
+            start_command = 'bin/rails server -b 0.0.0.0'
+            break
+    if start_command is None:
+        for entry_file in entry_files:
+            if entry_file in file_names:
+                start_command = f'bundle exec ruby {entry_file}'
+                break
+
+    return {
+        'install_command': install_command,
+        'build_command': None,
+        'start_command': start_command,
+    }
+
 
 def detect_cmd(lang, frameworks, files):
     file_names = {file.name for file in files}
@@ -163,5 +194,12 @@ def detect_cmd(lang, frameworks, files):
 
     if lang == 'Rust':
         return _detect_rust_commands(files, file_names)
+
+    if lang == 'Ruby':
+        return _detect_ruby_commands(
+            frameworks=frameworks,
+            files=files,
+            file_names=file_names
+        )
 
     return _empty_commands()
