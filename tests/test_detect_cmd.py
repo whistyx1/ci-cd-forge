@@ -280,3 +280,42 @@ class TestDetectCmd(unittest.TestCase):
                     'start_command': None,
                 }
             )
+
+    def test_detects_rust_application_commands(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            cargo_toml_path = project_path / 'Cargo.toml'
+            cargo_toml_path.write_text(
+                '''
+                    [package]
+                    name = "api-service"
+                    version = "0.1.0"
+                    edition = "2021"
+
+                    [dependencies]
+                    axum = "0.8"
+                '''
+            )
+            src_path = project_path / 'src'
+            src_path.mkdir()
+            main_path = project_path / 'src' / 'main.rs'
+            main_path.write_text(
+                '''
+                fn main() {
+                }
+                '''.strip(),
+                encoding='utf-8'
+            )
+            result = detect_cmd(
+                lang='Rust',
+                frameworks=[],
+                files=list(project_path.iterdir())
+            )
+            self.assertEqual(
+                result,
+                {
+                    'install_command': 'cargo fetch',
+                    'build_command': 'cargo build --release',
+                    'start_command': './target/release/api-service',
+                }
+            )

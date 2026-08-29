@@ -1,5 +1,6 @@
 import json
 import re
+import tomllib
 
 def _empty_commands():
     return {
@@ -58,7 +59,6 @@ def _detect_javascript_commands(files, file_names):
         'build_command': commands['build'] if 'build' in scripts else None,
         'start_command': commands['start'] if 'start' in scripts else None,
     }
-
 
 def _detect_python_commands(frameworks, file_names):
     # Python projects are installed from requirements and started by known files.
@@ -123,6 +123,31 @@ def _detect_go_commands(files, file_names):
                 }
     return _empty_commands()
 
+def _detect_rust_commands(files, file_names):
+    cargo_path = None
+    for file in files:
+        if file.name == 'Cargo.toml':
+            cargo_path = file
+            break
+    if cargo_path is None:
+        return _empty_commands()
+    main_path = cargo_path.parent / 'src' / 'main.rs'
+    if not main_path.is_file():
+        return _empty_commands()
+    try:
+        with cargo_path.open('rb') as file:
+            cargo_data = tomllib.load(file)
+    except tomllib.TOMLDecodeError:
+        return _empty_commands()
+    package_name = cargo_data.get('package', {}).get('name')
+    if not package_name:
+        return _empty_commands()
+    return {
+        'install_command': 'cargo fetch',
+        'build_command': 'cargo build --release',
+        'start_command': f'./target/release/{package_name}',
+    }
+
 
 def detect_cmd(lang, frameworks, files):
     file_names = {file.name for file in files}
@@ -135,5 +160,8 @@ def detect_cmd(lang, frameworks, files):
 
     if lang == 'Go':
         return _detect_go_commands(files, file_names)
+
+    if lang == 'Rust':
+        return _detect_rust_commands(files, file_names)
 
     return _empty_commands()
