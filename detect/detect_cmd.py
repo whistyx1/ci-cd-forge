@@ -179,6 +179,23 @@ def _detect_ruby_commands(frameworks, files, file_names):
         'start_command': start_command,
     }
 
+def _detect_php_commands(frameworks, file_names):
+    install_command = None
+    build_command = None
+    start_command = None
+    if 'composer.json' not in file_names:
+        return _empty_commands()
+    install_command = 'composer install'
+    for framework in frameworks:
+        if framework['name'] == 'Laravel' and 'artisan' in file_names:
+            start_command = 'php artisan serve --host=0.0.0.0 --port=8000'
+            break
+
+    return {
+        'install_command': install_command,
+        'build_command': build_command,
+        'start_command': start_command,
+    }
 
 def detect_cmd(lang, frameworks, files):
     file_names = {file.name for file in files}
@@ -199,6 +216,12 @@ def detect_cmd(lang, frameworks, files):
         return _detect_ruby_commands(
             frameworks=frameworks,
             files=files,
+            file_names=file_names
+        )
+
+    if lang == 'PHP':
+        return _detect_php_commands(
+            frameworks=frameworks,
             file_names=file_names
         )
 

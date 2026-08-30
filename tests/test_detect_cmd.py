@@ -371,7 +371,7 @@ class TestDetectCmd(unittest.TestCase):
                 '''
                     source 'https://rubygems.org'
 
-                    gem 'sinatra'
+                    gem 'rails'
                 '''.strip(),
                 encoding='utf-8'
             )
@@ -395,5 +395,79 @@ class TestDetectCmd(unittest.TestCase):
                     'install_command': 'bundle install',
                     'build_command': None,
                     'start_command': 'bin/rails server -b 0.0.0.0',
+                }
+            )
+
+    def test_detects_laravel_commands(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            composer_json_path = project_path / 'composer.json'
+            composer_json_path.write_text(
+                '''
+                    {
+                        "require": {
+                            "laravel/framework": "^12.0"
+                        }
+                    }
+                '''.strip(),
+                encoding='utf-8'
+            )
+            (project_path / 'composer.lock').touch()
+            (project_path / 'artisan').touch()
+            result = detect_cmd(
+                lang='PHP',
+                frameworks=[
+                    {
+                        'name': 'Laravel',
+                        'source': 'composer.json',
+                        'matched': 'laravel/framework',
+                    }
+                ],
+                files=list(project_path.iterdir())
+            )
+            self.assertEqual(
+                result,
+                {
+                    'install_command': 'composer install',
+                    'build_command': None,
+                    'start_command': 'php artisan serve --host=0.0.0.0 --port=8000',
+                }
+            )
+
+    def test_does_not_guess_symfony_start_command(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            composer_json_path = project_path / 'composer.json'
+            composer_json_path.write_text(
+                '''
+            {
+                "require": {
+                    "symfony/symfony": "^7.0"
+                }
+            }
+        '''.strip(),
+                encoding='utf-8'
+            )
+            (project_path / 'composer.lock').touch()
+            bin_path = project_path / 'bin'
+            bin_path.mkdir()
+            (bin_path / 'console').touch()
+            result = detect_cmd(
+                lang='PHP',
+                frameworks=[
+                    {
+                        'name': 'Symfony',
+                        'source': 'composer.json',
+                        'matched': 'symfony/symfony',
+                    }
+                ],
+                files=list(project_path.iterdir())
+            )
+            self.assertEqual(
+                result,
+                {
+                    'install_command': 'composer install',
+                    'build_command': None,
+                    'start_command': None,
                 }
             )
