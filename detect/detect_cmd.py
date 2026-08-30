@@ -1,6 +1,7 @@
 import json
 import re
 import tomllib
+import xml.etree.ElementTree as ET
 
 def _empty_commands():
     return {
@@ -197,6 +198,45 @@ def _detect_php_commands(frameworks, file_names):
         'start_command': start_command,
     }
 
+def _detect_java_commands(frameworks, files, file_names):
+    install_command = None
+    build_command = None
+    start_command = None
+    pom_path = None
+    if 'pom.xml' not in file_names or 'mvnw' not in file_names:
+        return _empty_commands()
+
+    for file in files:
+        if file.name == 'pom.xml':
+            pom_path = file
+            break
+    if pom_path is None:
+        return _empty_commands()
+    try:
+        root = ET.parse(pom_path).getroot()
+    except ET.ParseError:
+        return _empty_commands()
+    namespace = {
+        'm': 'http://maven.apache.org/POM/4.0.0',
+    }
+    final_name = root.findtext(
+        'm:build/m:finalName',
+        namespaces=namespace,
+    )
+    install_command = './mvnw dependency:go-offline'
+    build_command = './mvnw package'
+    is_spring = any(
+        framework['name'] == 'Spring'
+        for framework in frameworks
+    )
+    if is_spring and final_name:
+        start_command = f'java -jar target/{final_name.strip()}.jar'
+    return {
+        'install_command': install_command,
+        'build_command': build_command,
+        'start_command': start_command,
+    }
+
 def detect_cmd(lang, frameworks, files):
     file_names = {file.name for file in files}
 
@@ -223,6 +263,13 @@ def detect_cmd(lang, frameworks, files):
         return _detect_php_commands(
             frameworks=frameworks,
             file_names=file_names
+        )
+
+    if lang == 'Java':
+        return _detect_java_commands(
+            frameworks=frameworks,
+            files=files,
+            file_names=file_names,
         )
 
     return _empty_commands()

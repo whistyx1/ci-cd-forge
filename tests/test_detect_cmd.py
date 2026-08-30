@@ -471,3 +471,101 @@ class TestDetectCmd(unittest.TestCase):
                     'start_command': None,
                 }
             )
+
+    def test_detects_spring_maven_commands(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            pom_xml_path = project_path / 'pom.xml'
+            (project_path / 'mvnw').touch()
+            pom_xml_path.write_text(
+                '''
+                <project xmlns="http://maven.apache.org/POM/4.0.0">
+                    <modelVersion>4.0.0</modelVersion>
+
+                    <groupId>com.example</groupId>
+                    <artifactId>api-service</artifactId>
+                    <version>1.0.0</version>
+
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.springframework.boot</groupId>
+                            <artifactId>spring-boot-starter-web</artifactId>
+                            <version>3.3.0</version>
+                        </dependency>
+                    </dependencies>
+
+                    <build>
+                        <finalName>api-service</finalName>
+                    </build>
+                </project>
+                '''.strip(),
+                encoding='utf-8',
+            )
+            result = detect_cmd(
+                lang='Java',
+                frameworks=[
+                    {
+                        'name': 'Spring',
+                        'source': 'pom.xml',
+                        'matched': 'spring-boot-starter-web',
+                    }
+                ],
+                files=list(project_path.iterdir())
+            )
+            self.assertEqual(
+                result,
+                {
+                    'install_command': './mvnw dependency:go-offline',
+                    'build_command': './mvnw package',
+                    'start_command': 'java -jar target/api-service.jar',
+                }
+            )
+
+    def test_detects_hibernate_commands(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            pom_xml_path = project_path / 'pom.xml'
+            (project_path / 'mvnw').touch()
+            pom_xml_path.write_text(
+                '''
+                <project xmlns="http://maven.apache.org/POM/4.0.0">
+                    <modelVersion>4.0.0</modelVersion>
+
+                    <groupId>com.example</groupId>
+                    <artifactId>api-service</artifactId>
+                    <version>1.0.0</version>
+
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.springframework.boot</groupId>
+                            <artifactId>spring-boot-starter-web</artifactId>
+                            <version>3.3.0</version>
+                        </dependency>
+                    </dependencies>
+
+                    <build>
+                        <finalName>api-service</finalName>
+                    </build>
+                </project>
+                '''.strip(),
+                encoding='utf-8',
+            )
+            result = detect_cmd(
+                lang='Java',
+                frameworks=[
+                    {
+                        'name': 'Hibernate',
+                        'source': 'pom.xml',
+                        'matched': 'spring-boot-starter-web',
+                    }
+                ],
+                files=list(project_path.iterdir())
+            )
+            self.assertEqual(
+                result,
+                {
+                    'install_command': './mvnw dependency:go-offline',
+                    'build_command': './mvnw package',
+                    'start_command': None,
+                }
+            )
