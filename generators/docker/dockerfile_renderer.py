@@ -1,7 +1,9 @@
 import json
 
+from generators.docker.config import DockerfileConfig
 
-def generate_dockerfile(config: dict) -> str:
+
+def generate_dockerfile(config: DockerfileConfig) -> str:
     required_fields = ('base_image', 'workdir')
 
     for field in required_fields:
