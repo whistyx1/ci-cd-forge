@@ -28,7 +28,7 @@ def create_stack(path: str) -> list[dict]:
             'language source file': matched_file,
             'dependencies': package,
             'manifest_file': matched_file,
-            'entry_command': detect_cmd(lang, framework, files),
+            'commands': detect_cmd(lang, framework, files),
             'errors': errors,
             }
         stacks.append(proj_dict)

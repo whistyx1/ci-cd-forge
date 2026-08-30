@@ -177,7 +177,11 @@ class TestCreateStack(unittest.TestCase):
                     "language source file": "Cargo.toml",
                     "dependencies": [],
                     "manifest_file": "Cargo.toml",
-                    "entry_command": None,
+                    'commands': {
+                        'install_command': None,
+                        'build_command': None,
+                        'start_command': None,
+                    },
                     "errors": [
                         {
                             "file": "Cargo.toml",
