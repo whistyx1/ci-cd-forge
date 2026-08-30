@@ -734,3 +734,57 @@ class TestDetectCmd(unittest.TestCase):
                     'start_command': './gtk_app',
                 }
             )
+
+    def test_does_not_guess_cpp_start_command_without_executable(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            cmake_path = project_path / 'CMakeLists.txt'
+            cmake_path.write_text(
+                '''
+                   cmake_minimum_required(VERSION 3.20)
+                    project(MyLibrary)
+
+                    add_library(my_library library.cpp)
+                '''.strip(),
+                encoding='utf-8'
+            )
+            result = detect_cmd(
+                lang='C++',
+                frameworks=[],
+                files=list(project_path.iterdir()),
+            )
+            self.assertEqual(
+                result,
+                {
+                    'install_command': None,
+                    'build_command': 'cmake -S . -B build && cmake --build build',
+                    'start_command': None,
+                }
+            )
+
+    def test_does_not_guess_c_start_command_without_output_name(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            make_path = project_path / 'Makefile'
+            make_path.write_text(
+                '''
+                   CC = gcc
+
+                    all:
+                        $(CC) main.c
+                '''.strip(),
+                encoding='utf-8'
+            )
+            result = detect_cmd(
+                lang='C',
+                frameworks=[],
+                files=list(project_path.iterdir()),
+            )
+            self.assertEqual(
+                result,
+                {
+                    'install_command': None,
+                    'build_command': 'make',
+                    'start_command': None,
+                }
+            )
