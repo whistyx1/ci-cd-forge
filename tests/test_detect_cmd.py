@@ -629,3 +629,73 @@ class TestDetectCmd(unittest.TestCase):
                     'start_command': 'dotnet out/Frontend.dll',
                 }
             )
+
+    def test_detects_cpp_cmake_commands(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            cmake_path = project_path / 'CMakeLists.txt'
+            cmake_path.write_text(
+                '''
+                    cmake_minimum_required(VERSION 3.20)
+                    project(MyApp)
+
+                    find_package(Qt6 REQUIRED COMPONENTS Widgets)
+                    add_executable(my_app main.cpp)
+                    target_link_libraries(my_app PRIVATE Qt6::Widgets)
+                '''.strip(),
+                encoding='utf-8'
+            )
+            result = detect_cmd(
+                lang='C++',
+                frameworks=[
+                    {
+                        'name': 'Qt',
+                        'source': 'CMakeLists.txt',
+                        'matched': 'qt',
+                    }
+                ],
+                files=list(project_path.iterdir())
+            )
+            self.assertEqual(
+                result,
+                {
+                    'install_command': None,
+                    'build_command': 'cmake -S . -B build && cmake --build build',
+                    'start_command': './build/my_app',
+                }
+            )
+
+    def test_detects_cpp_boost_commands(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            boost_path = project_path / 'CMakeLists.txt'
+            boost_path.write_text(
+                '''
+                   cmake_minimum_required(VERSION 3.20)
+                    project(BoostApp)
+
+                    find_package(Boost REQUIRED)
+                    add_executable(boost_app main.cpp)
+                    target_link_libraries(boost_app PRIVATE Boost::boost)
+                '''.strip(),
+                encoding='utf-8'
+            )
+            result = detect_cmd(
+                lang='C++',
+                frameworks=[
+                    {
+                        'name': 'Boost',
+                        'source': 'CMakeLists.txt',
+                        'matched': 'boost',
+                    }
+                ],
+                files=list(project_path.iterdir())
+            )
+            self.assertEqual(
+                result,
+                {
+                    'install_command': None,
+                    'build_command': 'cmake -S . -B build && cmake --build build',
+                    'start_command': './build/boost_app',
+                }
+            )

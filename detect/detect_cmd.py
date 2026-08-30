@@ -260,6 +260,32 @@ def _detect_csharp_commands(files):
         'start_command': start_command,
     }
 
+def _detect_cpp_commands(files, file_names):
+    install_command = None
+    build_command = None
+    start_command = None
+    cmake_path = None
+    if 'CMakeLists.txt' not in file_names:
+        return _empty_commands()
+    for file in files:
+        if file.name == 'CMakeLists.txt':
+            cmake_path = file
+            break
+    c_content = cmake_path.read_text(encoding='utf-8')
+    match = re.search(
+        r'add_executable\s*\(\s*([A-Za-z0-9_.+-]+)',
+        c_content,
+        re.IGNORECASE,
+    )
+    if match:
+        start_command = f'./build/{match.group(1)}'
+    build_command = 'cmake -S . -B build && cmake --build build'
+    return {
+        'install_command': install_command,
+        'build_command': build_command,
+        'start_command': start_command,
+    }
+
 def detect_cmd(lang, frameworks, files):
     file_names = {file.name for file in files}
 
@@ -298,5 +324,11 @@ def detect_cmd(lang, frameworks, files):
     if lang == 'C#':
         return _detect_csharp_commands(
             files=files,
+        )
+
+    if lang == 'C++':
+        return _detect_cpp_commands(
+            files=files,
+            file_names=file_names,
         )
     return _empty_commands()
