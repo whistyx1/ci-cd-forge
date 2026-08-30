@@ -569,3 +569,63 @@ class TestDetectCmd(unittest.TestCase):
                     'start_command': None,
                 }
             )
+
+    def test_detects_aspnet_commands(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            backend_path = project_path / 'Backend.csproj'
+            backend_path.write_text(
+                '''<Project Sdk="Microsoft.NET.Sdk.Web">
+                <PropertyGroup>
+                    <TargetFramework>net8.0</TargetFramework>
+                </PropertyGroup>
+                </Project>'''.strip(),
+                encoding='utf-8'
+            )
+            result = detect_cmd(
+                lang='C#',
+                frameworks=[
+                    {
+                        'name': 'ASP.NET'
+                    }
+                ],
+                files=list(project_path.iterdir())
+            )
+            self.assertEqual(
+                result,
+                {
+                    'install_command': 'dotnet restore',
+                    'build_command': 'dotnet publish -c Release -o out',
+                    'start_command': 'dotnet out/Backend.dll',
+                }
+            )
+
+    def test_detects_blazor_commands(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            backend_path = project_path / 'Frontend.csproj'
+            backend_path.write_text(
+                '''<Project Sdk="Microsoft.NET.Sdk.Web">
+                <PropertyGroup>
+                    <TargetFramework>net8.0</TargetFramework>
+                </PropertyGroup>
+                </Project>'''.strip(),
+                encoding='utf-8'
+            )
+            result = detect_cmd(
+                lang='C#',
+                frameworks=[
+                    {
+                        'name': 'Blazor'
+                    }
+                ],
+                files=list(project_path.iterdir())
+            )
+            self.assertEqual(
+                result,
+                {
+                    'install_command': 'dotnet restore',
+                    'build_command': 'dotnet publish -c Release -o out',
+                    'start_command': 'dotnet out/Frontend.dll',
+                }
+            )

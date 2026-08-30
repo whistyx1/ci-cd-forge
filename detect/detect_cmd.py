@@ -237,6 +237,29 @@ def _detect_java_commands(frameworks, files, file_names):
         'start_command': start_command,
     }
 
+def _detect_csharp_commands(files):
+    install_command = None
+    build_command = None
+    start_command = None
+    csproj_path = None
+    for file in files:
+        if file.suffix == '.csproj':
+            csproj_path = file
+            break
+    if not csproj_path:
+        return _empty_commands()
+
+    project_name = csproj_path.stem
+    install_command = 'dotnet restore'
+    build_command = 'dotnet publish -c Release -o out'
+    start_command = f'dotnet out/{project_name}.dll'
+
+    return {
+        'install_command': install_command,
+        'build_command': build_command,
+        'start_command': start_command,
+    }
+
 def detect_cmd(lang, frameworks, files):
     file_names = {file.name for file in files}
 
@@ -272,4 +295,8 @@ def detect_cmd(lang, frameworks, files):
             file_names=file_names,
         )
 
+    if lang == 'C#':
+        return _detect_csharp_commands(
+            files=files,
+        )
     return _empty_commands()
