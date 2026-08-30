@@ -286,6 +286,30 @@ def _detect_cpp_commands(files, file_names):
         'start_command': start_command,
     }
 
+def _detect_c_commands(files, file_names):
+    install_command = None
+    build_command = None
+    start_command = None
+    makefile_path = None
+    if 'Makefile' not in file_names:
+        return _empty_commands()
+    for file in files:
+        if file.name == 'Makefile':
+            makefile_path = file
+            break
+    content = makefile_path.read_text(encoding='utf-8')
+    match = re.search(
+        r'(?:^|\s)-o\s+([A-Za-z0-9_.+-]+)',
+        content,
+    )
+    start_command = f'./{match.group(1)}' if match else None
+    build_command = 'make'
+    return {
+        'install_command': install_command,
+        'build_command': build_command,
+        'start_command': start_command,
+    }
+
 def detect_cmd(lang, frameworks, files):
     file_names = {file.name for file in files}
 
@@ -331,4 +355,11 @@ def detect_cmd(lang, frameworks, files):
             files=files,
             file_names=file_names,
         )
+
+    if lang == 'C':
+        return _detect_c_commands(
+            files=files,
+            file_names=file_names,
+        )
+
     return _empty_commands()

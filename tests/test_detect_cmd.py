@@ -699,3 +699,38 @@ class TestDetectCmd(unittest.TestCase):
                     'start_command': './build/boost_app',
                 }
             )
+
+    def test_detects_c_makefile_commands(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            make_path = project_path / 'Makefile'
+            make_path.write_text(
+                '''
+                   CC = gcc
+
+                    all: gtk_app
+
+                    gtk_app: main.c
+                        $(CC) main.c -o gtk_app $(shell pkg-config --cflags --libs gtk+-3.0)
+                '''.strip(),
+                encoding='utf-8'
+            )
+            result = detect_cmd(
+                lang='C',
+                frameworks=[
+                    {
+                        'name': 'GTK',
+                        'source': 'Makefile',
+                        'matched': 'gtk-3',
+                    }
+                ],
+                files=list(project_path.iterdir()),
+            )
+            self.assertEqual(
+                result,
+                {
+                    'install_command': None,
+                    'build_command': 'make',
+                    'start_command': './gtk_app',
+                }
+            )
