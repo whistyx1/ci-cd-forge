@@ -58,6 +58,39 @@ class TestDockerfileRenderer(unittest.TestCase):
             expected
         )
 
+    def test_renders_setup_command_before_dependency_files(self):
+        setup_command = (
+            'apt-get update '
+            '&& apt-get install -y --no-install-recommends cmake '
+            '&& rm -rf /var/lib/apt/lists/*'
+        )
+        expected = (
+            'FROM gcc:14\n'
+            'WORKDIR /app\n'
+            f'RUN {setup_command}\n'
+            'COPY CMakeLists.txt .\n'
+            'COPY . .\n'
+            'RUN cmake -S . -B build && cmake --build build\n'
+            'CMD ["sh", "-c", "./build/app"]\n'
+        )
+
+        result = generate_dockerfile(
+            config={
+                'base_image': 'gcc:14',
+                'workdir': '/app',
+                'setup_command': setup_command,
+                'dependency_files': ['CMakeLists.txt'],
+                'install_command': None,
+                'build_command': (
+                    'cmake -S . -B build && cmake --build build'
+                ),
+                'start_command': './build/app',
+                'port': None,
+            },
+        )
+
+        self.assertEqual(result, expected)
+
     def test_skips_missing_optional_instructions(self):
         expected = (
             'FROM alpine:3.22\n'

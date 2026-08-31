@@ -99,6 +99,447 @@ class TestDockerfileGenerator(unittest.TestCase):
                 expected_text,
             )
 
+    def test_generates_node_project_dockerfile_with_lock_file(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'package.json').write_text(
+                '{}\n',
+                encoding='utf-8',
+            )
+            (project_path / 'package-lock.json').write_text(
+                '{}\n',
+                encoding='utf-8',
+            )
+            stack = {
+                'language(s)': 'JavaScript',
+                'manifest_file': 'package.json',
+                'commands': {
+                    'install_command': 'npm ci',
+                    'build_command': 'npm run build',
+                    'start_command': 'npm start',
+                },
+            }
+            expected_path = project_path / 'Dockerfile'
+            expected_text = (
+                'FROM node:22-alpine\n'
+                'WORKDIR /app\n'
+                'COPY package.json .\n'
+                'COPY package-lock.json .\n'
+                'RUN npm ci\n'
+                'COPY . .\n'
+                'RUN npm run build\n'
+                'EXPOSE 3000\n'
+                'CMD ["sh", "-c", "npm start"]\n'
+            )
+
+            result = generate_project_dockerfile(
+                stack=stack,
+                project_path=project_path,
+                base_image='node:22-alpine',
+                workdir='/app',
+                port=3000,
+            )
+
+            self.assertEqual(result, expected_path)
+            self.assertEqual(
+                expected_path.read_text(encoding='utf-8'),
+                expected_text,
+            )
+
+    def test_generates_go_project_dockerfile_with_go_sum(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'go.mod').write_text(
+                'module example.com/my-service\n\ngo 1.23\n',
+                encoding='utf-8',
+            )
+            (project_path / 'go.sum').write_text(
+                'example.com/dependency v1.0.0 h1:checksum\n',
+                encoding='utf-8',
+            )
+            stack = {
+                'language(s)': 'Go',
+                'manifest_file': 'go.mod',
+                'commands': {
+                    'install_command': 'go mod download',
+                    'build_command': 'go build -o app .',
+                    'start_command': './app',
+                },
+            }
+            expected_path = project_path / 'Dockerfile'
+            expected_text = (
+                'FROM golang:1.23-alpine\n'
+                'WORKDIR /app\n'
+                'COPY go.mod .\n'
+                'COPY go.sum .\n'
+                'RUN go mod download\n'
+                'COPY . .\n'
+                'RUN go build -o app .\n'
+                'EXPOSE 8080\n'
+                'CMD ["sh", "-c", "./app"]\n'
+            )
+
+            result = generate_project_dockerfile(
+                stack=stack,
+                project_path=project_path,
+                base_image='golang:1.23-alpine',
+                workdir='/app',
+                port=8080,
+            )
+
+            self.assertEqual(result, expected_path)
+            self.assertEqual(
+                expected_path.read_text(encoding='utf-8'),
+                expected_text,
+            )
+
+    def test_generates_rust_project_dockerfile_with_cargo_lock(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'Cargo.toml').write_text(
+                '[package]\nname = "api-service"\nversion = "0.1.0"\n',
+                encoding='utf-8',
+            )
+            (project_path / 'Cargo.lock').write_text(
+                'version = 4\n',
+                encoding='utf-8',
+            )
+            stack = {
+                'language(s)': 'Rust',
+                'manifest_file': 'Cargo.toml',
+                'commands': {
+                    'install_command': 'cargo fetch',
+                    'build_command': 'cargo build --release',
+                    'start_command': './target/release/api-service',
+                },
+            }
+            expected_path = project_path / 'Dockerfile'
+            expected_text = (
+                'FROM rust:1.85-slim\n'
+                'WORKDIR /app\n'
+                'COPY Cargo.toml .\n'
+                'COPY Cargo.lock .\n'
+                'RUN cargo fetch\n'
+                'COPY . .\n'
+                'RUN cargo build --release\n'
+                'EXPOSE 8080\n'
+                'CMD ["sh", "-c", '
+                '"./target/release/api-service"]\n'
+            )
+
+            result = generate_project_dockerfile(
+                stack=stack,
+                project_path=project_path,
+                base_image='rust:1.85-slim',
+                workdir='/app',
+                port=8080,
+            )
+
+            self.assertEqual(result, expected_path)
+            self.assertEqual(
+                expected_path.read_text(encoding='utf-8'),
+                expected_text,
+            )
+
+    def test_generates_ruby_project_dockerfile_with_gemfile_lock(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'Gemfile').write_text(
+                "source 'https://rubygems.org'\n\ngem 'rails'\n",
+                encoding='utf-8',
+            )
+            (project_path / 'Gemfile.lock').write_text(
+                'GEM\n  specs:\n    rails (8.0.0)\n',
+                encoding='utf-8',
+            )
+            stack = {
+                'language(s)': 'Ruby',
+                'manifest_file': 'Gemfile',
+                'commands': {
+                    'install_command': 'bundle install',
+                    'build_command': None,
+                    'start_command': 'bin/rails server -b 0.0.0.0',
+                },
+            }
+            expected_path = project_path / 'Dockerfile'
+            expected_text = (
+                'FROM ruby:3.3-slim\n'
+                'WORKDIR /app\n'
+                'COPY Gemfile .\n'
+                'COPY Gemfile.lock .\n'
+                'RUN bundle install\n'
+                'COPY . .\n'
+                'EXPOSE 3000\n'
+                'CMD ["sh", "-c", '
+                '"bin/rails server -b 0.0.0.0"]\n'
+            )
+
+            result = generate_project_dockerfile(
+                stack=stack,
+                project_path=project_path,
+                base_image='ruby:3.3-slim',
+                workdir='/app',
+                port=3000,
+            )
+
+            self.assertEqual(result, expected_path)
+            self.assertEqual(
+                expected_path.read_text(encoding='utf-8'),
+                expected_text,
+            )
+
+    def test_generates_php_project_dockerfile_with_composer_lock(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'composer.json').write_text(
+                '{"require": {"laravel/framework": "^12.0"}}\n',
+                encoding='utf-8',
+            )
+            (project_path / 'composer.lock').write_text(
+                '{"packages": []}\n',
+                encoding='utf-8',
+            )
+            stack = {
+                'language(s)': 'PHP',
+                'manifest_file': 'composer.json',
+                'commands': {
+                    'install_command': 'composer install',
+                    'build_command': None,
+                    'start_command': (
+                        'php artisan serve --host=0.0.0.0 --port=8000'
+                    ),
+                },
+            }
+            expected_path = project_path / 'Dockerfile'
+            expected_text = (
+                'FROM composer:2\n'
+                'WORKDIR /app\n'
+                'COPY composer.json .\n'
+                'COPY composer.lock .\n'
+                'RUN composer install\n'
+                'COPY . .\n'
+                'EXPOSE 8000\n'
+                'CMD ["sh", "-c", '
+                '"php artisan serve --host=0.0.0.0 --port=8000"]\n'
+            )
+
+            result = generate_project_dockerfile(
+                stack=stack,
+                project_path=project_path,
+                base_image='composer:2',
+                workdir='/app',
+                port=8000,
+            )
+
+            self.assertEqual(result, expected_path)
+            self.assertEqual(
+                expected_path.read_text(encoding='utf-8'),
+                expected_text,
+            )
+
+    def test_generates_cpp_project_dockerfile_with_cmake(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'CMakeLists.txt').write_text(
+                'cmake_minimum_required(VERSION 3.20)\n'
+                'project(example)\n'
+                'add_executable(app main.cpp)\n',
+                encoding='utf-8',
+            )
+            (project_path / 'main.cpp').write_text(
+                'int main() { return 0; }\n',
+                encoding='utf-8',
+            )
+            stack = {
+                'language(s)': 'C++',
+                'manifest_file': 'CMakeLists.txt',
+                'commands': {
+                    'install_command': None,
+                    'build_command': (
+                        'cmake -S . -B build && cmake --build build'
+                    ),
+                    'start_command': './build/app',
+                },
+            }
+            setup_command = (
+                'apt-get update '
+                '&& apt-get install -y --no-install-recommends cmake '
+                '&& rm -rf /var/lib/apt/lists/*'
+            )
+            expected_path = project_path / 'Dockerfile'
+            expected_text = (
+                'FROM gcc:14\n'
+                'WORKDIR /app\n'
+                f'RUN {setup_command}\n'
+                'COPY CMakeLists.txt .\n'
+                'COPY . .\n'
+                'RUN cmake -S . -B build && cmake --build build\n'
+                'CMD ["sh", "-c", "./build/app"]\n'
+            )
+
+            result = generate_project_dockerfile(
+                stack=stack,
+                project_path=project_path,
+                base_image='gcc:14',
+                workdir='/app',
+                port=None,
+                setup_command=setup_command,
+            )
+
+            self.assertEqual(result, expected_path)
+            self.assertEqual(
+                expected_path.read_text(encoding='utf-8'),
+                expected_text,
+            )
+
+    def test_generates_c_project_dockerfile_with_make(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'Makefile').write_text(
+                'app: main.c\n\tgcc main.c -o app\n',
+                encoding='utf-8',
+            )
+            (project_path / 'main.c').write_text(
+                'int main(void) { return 0; }\n',
+                encoding='utf-8',
+            )
+            stack = {
+                'language(s)': 'C',
+                'manifest_file': 'Makefile',
+                'commands': {
+                    'install_command': None,
+                    'build_command': 'make',
+                    'start_command': './app',
+                },
+            }
+            expected_path = project_path / 'Dockerfile'
+            expected_text = (
+                'FROM gcc:14\n'
+                'WORKDIR /app\n'
+                'COPY Makefile .\n'
+                'COPY . .\n'
+                'RUN make\n'
+                'CMD ["sh", "-c", "./app"]\n'
+            )
+
+            result = generate_project_dockerfile(
+                stack=stack,
+                project_path=project_path,
+                base_image='gcc:14',
+                workdir='/app',
+                port=None,
+            )
+
+            self.assertEqual(result, expected_path)
+            self.assertEqual(
+                expected_path.read_text(encoding='utf-8'),
+                expected_text,
+            )
+
+    def test_generates_dotnet_project_dockerfile(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'Backend.csproj').write_text(
+                '<Project Sdk="Microsoft.NET.Sdk.Web">\n'
+                '  <PropertyGroup>\n'
+                '    <TargetFramework>net8.0</TargetFramework>\n'
+                '  </PropertyGroup>\n'
+                '</Project>\n',
+                encoding='utf-8',
+            )
+            stack = {
+                'language(s)': 'C#',
+                'manifest_file': 'Backend.csproj',
+                'commands': {
+                    'install_command': 'dotnet restore',
+                    'build_command': 'dotnet publish -c Release -o out',
+                    'start_command': 'dotnet out/Backend.dll',
+                },
+            }
+            expected_path = project_path / 'Dockerfile'
+            expected_text = (
+                'FROM mcr.microsoft.com/dotnet/sdk:8.0\n'
+                'WORKDIR /app\n'
+                'COPY Backend.csproj .\n'
+                'RUN dotnet restore\n'
+                'COPY . .\n'
+                'RUN dotnet publish -c Release -o out\n'
+                'EXPOSE 8080\n'
+                'CMD ["sh", "-c", "dotnet out/Backend.dll"]\n'
+            )
+
+            result = generate_project_dockerfile(
+                stack=stack,
+                project_path=project_path,
+                base_image='mcr.microsoft.com/dotnet/sdk:8.0',
+                workdir='/app',
+                port=8080,
+            )
+
+            self.assertEqual(result, expected_path)
+            self.assertEqual(
+                expected_path.read_text(encoding='utf-8'),
+                expected_text,
+            )
+
+    def test_generates_java_project_dockerfile_with_maven_wrapper(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'pom.xml').write_text(
+                '<project>\n'
+                '  <modelVersion>4.0.0</modelVersion>\n'
+                '  <artifactId>api-service</artifactId>\n'
+                '</project>\n',
+                encoding='utf-8',
+            )
+            (project_path / 'mvnw').write_text(
+                '#!/bin/sh\n',
+                encoding='utf-8',
+            )
+            maven_wrapper_path = project_path / '.mvn' / 'wrapper'
+            maven_wrapper_path.mkdir(parents=True)
+            (maven_wrapper_path / 'maven-wrapper.properties').write_text(
+                'distributionUrl=https://example.com/apache-maven.zip\n',
+                encoding='utf-8',
+            )
+            stack = {
+                'language(s)': 'Java',
+                'manifest_file': 'pom.xml',
+                'commands': {
+                    'install_command': './mvnw dependency:go-offline',
+                    'build_command': './mvnw package',
+                    'start_command': 'java -jar target/api-service.jar',
+                },
+            }
+            expected_path = project_path / 'Dockerfile'
+            expected_text = (
+                'FROM maven:3.9-eclipse-temurin-21\n'
+                'WORKDIR /app\n'
+                'COPY pom.xml .\n'
+                'COPY mvnw .\n'
+                'COPY .mvn .mvn\n'
+                'RUN ./mvnw dependency:go-offline\n'
+                'COPY . .\n'
+                'RUN ./mvnw package\n'
+                'EXPOSE 8080\n'
+                'CMD ["sh", "-c", '
+                '"java -jar target/api-service.jar"]\n'
+            )
+
+            result = generate_project_dockerfile(
+                stack=stack,
+                project_path=project_path,
+                base_image='maven:3.9-eclipse-temurin-21',
+                workdir='/app',
+                port=8080,
+            )
+
+            self.assertEqual(result, expected_path)
+            self.assertEqual(
+                expected_path.read_text(encoding='utf-8'),
+                expected_text,
+            )
+
 
 if __name__ == '__main__':
     unittest.main()

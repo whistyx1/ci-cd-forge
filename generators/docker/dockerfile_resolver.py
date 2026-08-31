@@ -7,6 +7,7 @@ def resolve_dockerfile_config(
     workdir,
     port,
     file_names=None,
+    setup_command=None,
 ) -> DockerfileConfig:
     file_names = file_names or set()
     commands = stack.get('commands', {})
@@ -21,6 +22,18 @@ def resolve_dockerfile_config(
     lock_file = lock_files_by_install_command.get(install_command)
     if manifest_file == 'package.json' and lock_file in file_names:
         dependency_files.append(lock_file)
+    if manifest_file == 'go.mod' and 'go.sum' in file_names:
+        dependency_files.append('go.sum')
+    if manifest_file == 'Cargo.toml' and 'Cargo.lock' in file_names:
+        dependency_files.append('Cargo.lock')
+    if manifest_file == 'Gemfile' and 'Gemfile.lock' in file_names:
+        dependency_files.append('Gemfile.lock')
+    if manifest_file == 'composer.json' and 'composer.lock' in file_names:
+        dependency_files.append('composer.lock')
+    if manifest_file == 'pom.xml':
+        for companion_path in ('mvnw', '.mvn'):
+            if companion_path in file_names:
+                dependency_files.append(companion_path)
     config: DockerfileConfig = {
         'base_image': base_image,
         'workdir': workdir,
@@ -30,4 +43,6 @@ def resolve_dockerfile_config(
         'build_command': commands.get('build_command'),
         'port': port,
     }
+    if setup_command is not None:
+        config['setup_command'] = setup_command
     return config

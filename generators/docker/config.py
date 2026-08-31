@@ -10,3 +10,4 @@ class DockerfileConfig(TypedDict):
     build_command: NotRequired[str | None]
     start_command: NotRequired[str | None]
     port: NotRequired[int | None]
+    setup_command: NotRequired[str | None]

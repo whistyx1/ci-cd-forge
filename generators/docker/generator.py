@@ -11,6 +11,7 @@ def generate_project_dockerfile(
     base_image: str,
     workdir: str,
     port: int | None,
+    setup_command: str | None = None,
     force: bool = False,
 ) -> Path:
     file_names = {file.name for file in project_path.iterdir()}
@@ -20,6 +21,7 @@ def generate_project_dockerfile(
         workdir=workdir,
         port=port,
         file_names=file_names,
+        setup_command=setup_command,
     )
     dockerfile_text = generate_dockerfile(config=config)
     dockerfile_path = write_dockerfile(
