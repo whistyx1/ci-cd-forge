@@ -3,6 +3,7 @@ from pathlib import Path
 from generators.docker.dockerfile_renderer import generate_dockerfile
 from generators.docker.dockerfile_resolver import resolve_dockerfile_config
 from generators.docker.dockerfile_writer import write_dockerfile
+from generators.docker.config_validator import validate_dockerfile_config
 
 
 def generate_project_dockerfile(
@@ -23,6 +24,7 @@ def generate_project_dockerfile(
         file_names=file_names,
         setup_command=setup_command,
     )
+    validate_dockerfile_config(config=config)
     dockerfile_text = generate_dockerfile(config=config)
     dockerfile_path = write_dockerfile(
         project_path=project_path,

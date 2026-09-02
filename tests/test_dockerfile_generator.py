@@ -540,6 +540,37 @@ class TestDockerfileGenerator(unittest.TestCase):
                 expected_text,
             )
 
+    def test_rejects_invalid_config_before_writing_dockerfile(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'requirements.txt').write_text(
+                'Django==5.1.2\n',
+                encoding='utf-8',
+            )
+            stack = {
+                'language(s)': 'Python',
+                'manifest_file': 'requirements.txt',
+                'commands': {
+                    'install_command': (
+                        'python -m pip install -r requirements.txt'
+                    ),
+                    'build_command': None,
+                    'start_command': 'python main.py',
+                },
+            }
+            dockerfile_path = project_path / 'Dockerfile'
+
+            with self.assertRaisesRegex(ValueError, 'port'):
+                generate_project_dockerfile(
+                    stack=stack,
+                    project_path=project_path,
+                    base_image='python:3.12-slim',
+                    workdir='/app',
+                    port=0,
+                )
+
+            self.assertFalse(dockerfile_path.exists())
+
 
 if __name__ == '__main__':
     unittest.main()
