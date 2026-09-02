@@ -626,6 +626,301 @@ class TestDockerfileGenerator(unittest.TestCase):
                 expected_text,
             )
 
+    def test_generates_multistage_rust_project_dockerfile(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'Cargo.toml').write_text(
+                '[package]\nname = "api-service"\nversion = "0.1.0"\n',
+                encoding='utf-8',
+            )
+            (project_path / 'Cargo.lock').write_text(
+                'version = 4\n',
+                encoding='utf-8',
+            )
+            stack = {
+                'language(s)': 'Rust',
+                'manifest_file': 'Cargo.toml',
+                'commands': {
+                    'install_command': 'cargo fetch',
+                    'build_command': 'cargo build --release',
+                    'start_command': './target/release/api-service',
+                },
+            }
+            expected_path = project_path / 'Dockerfile'
+            expected_text = (
+                'FROM rust:1.85-slim AS builder\n'
+                'WORKDIR /app\n'
+                'COPY Cargo.toml .\n'
+                'COPY Cargo.lock .\n'
+                'RUN cargo fetch\n'
+                'COPY . .\n'
+                'RUN cargo build --release\n'
+                '\n'
+                'FROM debian:bookworm-slim AS runtime\n'
+                'WORKDIR /app\n'
+                'COPY --from=builder '
+                '/app/target/release/api-service '
+                '/app/target/release/api-service\n'
+                'EXPOSE 8080\n'
+                'CMD ["sh", "-c", '
+                '"./target/release/api-service"]\n'
+            )
+
+            result = generate_project_dockerfile(
+                stack=stack,
+                project_path=project_path,
+                base_image='rust:1.85-slim',
+                workdir='/app',
+                port=8080,
+                strategy='multi',
+                runtime_image='debian:bookworm-slim',
+                artifact_source='/app/target/release/api-service',
+                artifact_destination='/app/target/release/api-service',
+            )
+
+            self.assertEqual(result, expected_path)
+            self.assertEqual(
+                expected_path.read_text(encoding='utf-8'),
+                expected_text,
+            )
+
+    def test_generates_multistage_c_project_dockerfile(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'Makefile').write_text(
+                'app: main.c\n\tgcc main.c -o app\n',
+                encoding='utf-8',
+            )
+            (project_path / 'main.c').write_text(
+                'int main(void) { return 0; }\n',
+                encoding='utf-8',
+            )
+            stack = {
+                'language(s)': 'C',
+                'manifest_file': 'Makefile',
+                'commands': {
+                    'install_command': None,
+                    'build_command': 'make',
+                    'start_command': './app',
+                },
+            }
+            expected_path = project_path / 'Dockerfile'
+            expected_text = (
+                'FROM gcc:14 AS builder\n'
+                'WORKDIR /app\n'
+                'COPY Makefile .\n'
+                'COPY . .\n'
+                'RUN make\n'
+                '\n'
+                'FROM debian:bookworm-slim AS runtime\n'
+                'WORKDIR /app\n'
+                'COPY --from=builder /app/app /app/app\n'
+                'CMD ["sh", "-c", "./app"]\n'
+            )
+
+            result = generate_project_dockerfile(
+                stack=stack,
+                project_path=project_path,
+                base_image='gcc:14',
+                workdir='/app',
+                port=None,
+                strategy='multi',
+                runtime_image='debian:bookworm-slim',
+                artifact_source='/app/app',
+                artifact_destination='/app/app',
+            )
+
+            self.assertEqual(result, expected_path)
+            self.assertEqual(
+                expected_path.read_text(encoding='utf-8'),
+                expected_text,
+            )
+
+    def test_generates_multistage_cpp_project_dockerfile(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'CMakeLists.txt').write_text(
+                'cmake_minimum_required(VERSION 3.20)\n'
+                'project(example)\n'
+                'add_executable(app main.cpp)\n',
+                encoding='utf-8',
+            )
+            (project_path / 'main.cpp').write_text(
+                'int main() { return 0; }\n',
+                encoding='utf-8',
+            )
+            stack = {
+                'language(s)': 'C++',
+                'manifest_file': 'CMakeLists.txt',
+                'commands': {
+                    'install_command': None,
+                    'build_command': (
+                        'cmake -S . -B build && cmake --build build'
+                    ),
+                    'start_command': './build/app',
+                },
+            }
+            setup_command = (
+                'apt-get update '
+                '&& apt-get install -y --no-install-recommends cmake '
+                '&& rm -rf /var/lib/apt/lists/*'
+            )
+            expected_path = project_path / 'Dockerfile'
+            expected_text = (
+                'FROM gcc:14 AS builder\n'
+                'WORKDIR /app\n'
+                f'RUN {setup_command}\n'
+                'COPY CMakeLists.txt .\n'
+                'COPY . .\n'
+                'RUN cmake -S . -B build && cmake --build build\n'
+                '\n'
+                'FROM debian:bookworm-slim AS runtime\n'
+                'WORKDIR /app\n'
+                'COPY --from=builder /app/build/app /app/build/app\n'
+                'CMD ["sh", "-c", "./build/app"]\n'
+            )
+
+            result = generate_project_dockerfile(
+                stack=stack,
+                project_path=project_path,
+                base_image='gcc:14',
+                workdir='/app',
+                port=None,
+                setup_command=setup_command,
+                strategy='multi',
+                runtime_image='debian:bookworm-slim',
+                artifact_source='/app/build/app',
+                artifact_destination='/app/build/app',
+            )
+
+            self.assertEqual(result, expected_path)
+            self.assertEqual(
+                expected_path.read_text(encoding='utf-8'),
+                expected_text,
+            )
+
+    def test_generates_multistage_java_project_dockerfile(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'pom.xml').write_text(
+                '<project>\n'
+                '  <modelVersion>4.0.0</modelVersion>\n'
+                '  <artifactId>api-service</artifactId>\n'
+                '</project>\n',
+                encoding='utf-8',
+            )
+            (project_path / 'mvnw').write_text(
+                '#!/bin/sh\n',
+                encoding='utf-8',
+            )
+            maven_wrapper_path = project_path / '.mvn' / 'wrapper'
+            maven_wrapper_path.mkdir(parents=True)
+            (maven_wrapper_path / 'maven-wrapper.properties').write_text(
+                'distributionUrl=https://example.com/apache-maven.zip\n',
+                encoding='utf-8',
+            )
+            stack = {
+                'language(s)': 'Java',
+                'manifest_file': 'pom.xml',
+                'commands': {
+                    'install_command': './mvnw dependency:go-offline',
+                    'build_command': './mvnw package',
+                    'start_command': 'java -jar target/api-service.jar',
+                },
+            }
+            expected_path = project_path / 'Dockerfile'
+            expected_text = (
+                'FROM maven:3.9-eclipse-temurin-21 AS builder\n'
+                'WORKDIR /app\n'
+                'COPY pom.xml .\n'
+                'COPY mvnw .\n'
+                'COPY .mvn .mvn\n'
+                'RUN ./mvnw dependency:go-offline\n'
+                'COPY . .\n'
+                'RUN ./mvnw package\n'
+                '\n'
+                'FROM eclipse-temurin:21-jre AS runtime\n'
+                'WORKDIR /app\n'
+                'COPY --from=builder '
+                '/app/target/api-service.jar '
+                '/app/target/api-service.jar\n'
+                'EXPOSE 8080\n'
+                'CMD ["sh", "-c", '
+                '"java -jar target/api-service.jar"]\n'
+            )
+
+            result = generate_project_dockerfile(
+                stack=stack,
+                project_path=project_path,
+                base_image='maven:3.9-eclipse-temurin-21',
+                workdir='/app',
+                port=8080,
+                strategy='multi',
+                runtime_image='eclipse-temurin:21-jre',
+                artifact_source='/app/target/api-service.jar',
+                artifact_destination='/app/target/api-service.jar',
+            )
+
+            self.assertEqual(result, expected_path)
+            self.assertEqual(
+                expected_path.read_text(encoding='utf-8'),
+                expected_text,
+            )
+
+    def test_generates_multistage_dotnet_project_dockerfile(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'Backend.csproj').write_text(
+                '<Project Sdk="Microsoft.NET.Sdk.Web">\n'
+                '  <PropertyGroup>\n'
+                '    <TargetFramework>net8.0</TargetFramework>\n'
+                '  </PropertyGroup>\n'
+                '</Project>\n',
+                encoding='utf-8',
+            )
+            stack = {
+                'language(s)': 'C#',
+                'manifest_file': 'Backend.csproj',
+                'commands': {
+                    'install_command': 'dotnet restore',
+                    'build_command': 'dotnet publish -c Release -o out',
+                    'start_command': 'dotnet out/Backend.dll',
+                },
+            }
+            expected_path = project_path / 'Dockerfile'
+            expected_text = (
+                'FROM mcr.microsoft.com/dotnet/sdk:8.0 AS builder\n'
+                'WORKDIR /app\n'
+                'COPY Backend.csproj .\n'
+                'RUN dotnet restore\n'
+                'COPY . .\n'
+                'RUN dotnet publish -c Release -o out\n'
+                '\n'
+                'FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime\n'
+                'WORKDIR /app\n'
+                'COPY --from=builder /app/out /app/out\n'
+                'EXPOSE 8080\n'
+                'CMD ["sh", "-c", "dotnet out/Backend.dll"]\n'
+            )
+
+            result = generate_project_dockerfile(
+                stack=stack,
+                project_path=project_path,
+                base_image='mcr.microsoft.com/dotnet/sdk:8.0',
+                workdir='/app',
+                port=8080,
+                strategy='multi',
+                runtime_image='mcr.microsoft.com/dotnet/aspnet:8.0',
+                artifact_source='/app/out',
+                artifact_destination='/app/out',
+            )
+
+            self.assertEqual(result, expected_path)
+            self.assertEqual(
+                expected_path.read_text(encoding='utf-8'),
+                expected_text,
+            )
+
 
 if __name__ == '__main__':
     unittest.main()
