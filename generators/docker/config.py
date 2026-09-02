@@ -1,4 +1,4 @@
-from typing import NotRequired, TypedDict
+from typing import Literal, NotRequired, TypedDict
 
 
 class DockerfileConfig(TypedDict):
@@ -11,3 +11,7 @@ class DockerfileConfig(TypedDict):
     start_command: NotRequired[str | None]
     port: NotRequired[int | None]
     setup_command: NotRequired[str | None]
+    strategy: NotRequired[Literal['single', 'multi']]
+    runtime_image: NotRequired[str]
+    artifact_source: NotRequired[str]
+    artifact_destination: NotRequired[str]

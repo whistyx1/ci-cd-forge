@@ -571,6 +571,61 @@ class TestDockerfileGenerator(unittest.TestCase):
 
             self.assertFalse(dockerfile_path.exists())
 
+    def test_generates_multistage_go_project_dockerfile(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'go.mod').write_text(
+                'module example.com/my-service\n\ngo 1.23\n',
+                encoding='utf-8',
+            )
+            (project_path / 'go.sum').write_text(
+                'example.com/dependency v1.0.0 h1:checksum\n',
+                encoding='utf-8',
+            )
+            stack = {
+                'language(s)': 'Go',
+                'manifest_file': 'go.mod',
+                'commands': {
+                    'install_command': 'go mod download',
+                    'build_command': 'go build -o app .',
+                    'start_command': './app',
+                },
+            }
+            expected_path = project_path / 'Dockerfile'
+            expected_text = (
+                'FROM golang:1.23-alpine AS builder\n'
+                'WORKDIR /app\n'
+                'COPY go.mod .\n'
+                'COPY go.sum .\n'
+                'RUN go mod download\n'
+                'COPY . .\n'
+                'RUN go build -o app .\n'
+                '\n'
+                'FROM alpine:3.22 AS runtime\n'
+                'WORKDIR /app\n'
+                'COPY --from=builder /app/app /app/app\n'
+                'EXPOSE 8080\n'
+                'CMD ["sh", "-c", "./app"]\n'
+            )
+
+            result = generate_project_dockerfile(
+                stack=stack,
+                project_path=project_path,
+                base_image='golang:1.23-alpine',
+                workdir='/app',
+                port=8080,
+                strategy='multi',
+                runtime_image='alpine:3.22',
+                artifact_source='/app/app',
+                artifact_destination='/app/app',
+            )
+
+            self.assertEqual(result, expected_path)
+            self.assertEqual(
+                expected_path.read_text(encoding='utf-8'),
+                expected_text,
+            )
+
 
 if __name__ == '__main__':
     unittest.main()

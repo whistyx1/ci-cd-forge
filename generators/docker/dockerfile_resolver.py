@@ -8,6 +8,10 @@ def resolve_dockerfile_config(
     port,
     file_names=None,
     setup_command=None,
+    strategy='single',
+    runtime_image=None,
+    artifact_source=None,
+    artifact_destination=None,
 ) -> DockerfileConfig:
     file_names = file_names or set()
     commands = stack.get('commands', {})
@@ -43,6 +47,17 @@ def resolve_dockerfile_config(
         'build_command': commands.get('build_command'),
         'port': port,
     }
+    if strategy != 'single':
+        config['strategy'] = strategy
+    multistage_fields = {
+        'runtime_image': runtime_image,
+        'artifact_destination': artifact_destination,
+        'artifact_source': artifact_source
+    }
+    for field, value in multistage_fields.items():
+        if value is not None:
+            config[field] = value
+
     if setup_command is not None:
         config['setup_command'] = setup_command
     return config

@@ -5,6 +5,24 @@ from generators.docker.config import DockerfileConfig
 
 def validate_dockerfile_config(config: DockerfileConfig) -> None:
     base_image = config.get('base_image')
+    strategy = config.get('strategy', 'single')
+
+    if strategy not in ('single', 'multi'):
+        raise ValueError(f'invalid strategy: {strategy}')
+
+    multi_stage_fields = {
+        'runtime_image': config.get('runtime_image'),
+        'artifact_source': config.get('artifact_source'),
+        'artifact_destination': config.get('artifact_destination')
+    }
+
+    if strategy == 'multi':
+        for field, value in multi_stage_fields.items():
+            if (
+                not isinstance(value, str)
+                or not value.strip()
+            ):
+                raise ValueError(f'{field}')
 
     if not isinstance(base_image, str) or not base_image.strip():
         raise ValueError('base_image must be a non-empty string')

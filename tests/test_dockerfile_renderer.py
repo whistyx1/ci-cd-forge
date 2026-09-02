@@ -91,6 +91,41 @@ class TestDockerfileRenderer(unittest.TestCase):
 
         self.assertEqual(result, expected)
 
+    def test_renders_multistage_go_dockerfile(self):
+        expected = (
+            'FROM golang:1.23-alpine AS builder\n'
+            'WORKDIR /app\n'
+            'COPY go.mod .\n'
+            'COPY go.sum .\n'
+            'RUN go mod download\n'
+            'COPY . .\n'
+            'RUN go build -o app .\n'
+            '\n'
+            'FROM alpine:3.22 AS runtime\n'
+            'WORKDIR /app\n'
+            'COPY --from=builder /app/app /app/app\n'
+            'EXPOSE 8080\n'
+            'CMD ["sh", "-c", "./app"]\n'
+        )
+
+        result = generate_dockerfile(
+            config={
+                'strategy': 'multi',
+                'base_image': 'golang:1.23-alpine',
+                'runtime_image': 'alpine:3.22',
+                'workdir': '/app',
+                'dependency_files': ['go.mod', 'go.sum'],
+                'install_command': 'go mod download',
+                'build_command': 'go build -o app .',
+                'artifact_source': '/app/app',
+                'artifact_destination': '/app/app',
+                'start_command': './app',
+                'port': 8080,
+            },
+        )
+
+        self.assertEqual(result, expected)
+
     def test_skips_missing_optional_instructions(self):
         expected = (
             'FROM alpine:3.22\n'

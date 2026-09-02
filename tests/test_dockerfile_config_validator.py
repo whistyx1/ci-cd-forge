@@ -145,6 +145,53 @@ class TestDockerfileConfigValidator(unittest.TestCase):
                 ):
                     validate_dockerfile_config(config)
 
+    def test_accepts_valid_multistage_config(self):
+        config = {
+            'strategy': 'multi',
+            'base_image': 'golang:1.23-alpine',
+            'runtime_image': 'alpine:3.22',
+            'workdir': '/app',
+            'build_command': 'go build -o app .',
+            'artifact_source': '/app/app',
+            'artifact_destination': '/app/app',
+            'start_command': './app',
+        }
+
+        self.assertIsNone(validate_dockerfile_config(config))
+
+    def test_rejects_unknown_strategy(self):
+        config = {
+            'strategy': 'banana',
+            'base_image': 'golang:1.23-alpine',
+            'workdir': '/app',
+        }
+
+        with self.assertRaisesRegex(ValueError, 'strategy'):
+            validate_dockerfile_config(config)
+
+    def test_requires_multistage_fields(self):
+        required_multistage_fields = (
+            'runtime_image',
+            'artifact_source',
+            'artifact_destination',
+        )
+        complete_config = {
+            'strategy': 'multi',
+            'base_image': 'golang:1.23-alpine',
+            'runtime_image': 'alpine:3.22',
+            'workdir': '/app',
+            'artifact_source': '/app/app',
+            'artifact_destination': '/app/app',
+        }
+
+        for field in required_multistage_fields:
+            with self.subTest(field=field):
+                config = complete_config.copy()
+                config.pop(field)
+
+                with self.assertRaisesRegex(ValueError, field):
+                    validate_dockerfile_config(config)
+
 
 if __name__ == '__main__':
     unittest.main()
