@@ -18,6 +18,7 @@ def resolve_compose_config(stacks: list[dict]) -> ComposeConfig:
         key=lambda item: item[0],
     ):
         stack_path = Path(stack_path_value)
+        port = stack.get('port')
 
         if stack_path == Path('root'):
             service_name = 'app'
@@ -35,5 +36,7 @@ def resolve_compose_config(stacks: list[dict]) -> ComposeConfig:
             'dockerfile': 'Dockerfile',
         }
         services[service_name] = service_config
+        if port is not None:
+            service_config['ports'] = [f'{port}:{port}']
 
     return {'services': services}

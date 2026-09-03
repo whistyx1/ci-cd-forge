@@ -13,6 +13,7 @@ class TestComposeGenerator(unittest.TestCase):
                 {
                     'path': 'root/backend',
                     'language(s)': 'Python',
+                    'port': 8000,
                 },
                 {
                     'path': 'root/frontend',
@@ -34,6 +35,8 @@ class TestComposeGenerator(unittest.TestCase):
                 '    build:\n'
                 '      context: ./backend\n'
                 '      dockerfile: Dockerfile\n'
+                '    ports:\n'
+                '      - 8000:8000\n'
                 '  frontend:\n'
                 '    build:\n'
                 '      context: ./frontend\n'

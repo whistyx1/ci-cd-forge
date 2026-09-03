@@ -49,6 +49,25 @@ class TestComposeResolver(unittest.TestCase):
             },
         )
 
+    def test_adds_exact_detected_port_to_service(self):
+        stacks = [
+            {
+                'path': 'root/backend',
+                'port': 8000,
+            },
+            {
+                'path': 'root/frontend',
+            },
+        ]
+
+        result = resolve_compose_config(stacks)
+
+        self.assertEqual(
+            result['services']['backend']['ports'],
+            ['8000:8000'],
+        )
+        self.assertNotIn('ports', result['services']['frontend'])
+
     def test_rejects_invalid_stack_paths(self):
         invalid_paths = [None, '', '   ', 123]
 
