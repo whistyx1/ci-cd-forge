@@ -7,12 +7,12 @@ class TestComposeResolver(unittest.TestCase):
     def test_resolves_project_stacks_to_compose_services(self):
         stacks = [
             {
-                'path': 'root/backend',
-                'language(s)': 'Python',
-            },
-            {
                 'path': 'root/frontend',
                 'language(s)': 'JavaScript',
+            },
+            {
+                'path': 'root/backend',
+                'language(s)': 'Python',
             },
         ]
 
