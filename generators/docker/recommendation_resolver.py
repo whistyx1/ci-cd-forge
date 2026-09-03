@@ -43,10 +43,15 @@ def resolve_docker_recommendation(
     if setup_command is not None:
         options['setup_command'] = setup_command
 
+    commands = stack.get('commands') or {}
+    requires_confirmation = []
+    if not commands.get('start_command'):
+        requires_confirmation.append('start_command')
+
     if strategy == 'single':
         return {
             'options': options,
-            'requires_confirmation': [],
+            'requires_confirmation': requires_confirmation,
         }
 
     multistage = preset.get('multistage')
@@ -60,7 +65,6 @@ def resolve_docker_recommendation(
         project_path=project_path,
         stack=stack,
     )
-    requires_confirmation = []
     if project_name is None:
         project_name = 'app'
         requires_confirmation.append('project_name')

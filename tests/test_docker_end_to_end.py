@@ -155,6 +155,34 @@ class TestDockerEndToEnd(unittest.TestCase):
 
             self.assertFalse((project_path / 'Dockerfile').exists())
 
+    def test_rejects_invalid_manifest_without_writing_dockerfile(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'package.json').write_text(
+                '{invalid json',
+                encoding='utf-8',
+            )
+
+            stacks = create_stack(temp_dir)
+            self.assertEqual(len(stacks), 1)
+            self.assertEqual(
+                stacks[0]['errors'],
+                [
+                    {
+                        'file': 'package.json',
+                        'message': 'Invalid manifest format',
+                    },
+                ],
+            )
+
+            with self.assertRaisesRegex(ValueError, 'detection errors'):
+                generate_recommended_dockerfile(
+                    stack=stacks[0],
+                    project_path=project_path,
+                )
+
+            self.assertFalse((project_path / 'Dockerfile').exists())
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -24,7 +24,7 @@ class TestDockerRecommendationResolver(unittest.TestCase):
                     'port': None,
                     'strategy': 'single',
                 },
-                'requires_confirmation': [],
+                'requires_confirmation': ['start_command'],
             },
         )
 
@@ -79,7 +79,7 @@ class TestDockerRecommendationResolver(unittest.TestCase):
         self.assertEqual(result['options']['artifact_source'], '/app/target/app.jar')
         self.assertEqual(
             result['requires_confirmation'],
-            ['project_name', 'artifact_source'],
+            ['start_command', 'project_name', 'artifact_source'],
         )
 
     def test_rejects_unavailable_multistage_preset(self):

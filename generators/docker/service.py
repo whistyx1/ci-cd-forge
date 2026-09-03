@@ -12,6 +12,10 @@ def generate_recommended_dockerfile(
     strategy: Literal['single', 'multi'] = 'single',
     force: bool = False,
 ) -> Path:
+    detection_errors = stack.get('errors') or []
+    if detection_errors:
+        raise ValueError('Stack contains unresolved detection errors.')
+
     detected_languages = _find_manifest_languages(project_path)
     if len(detected_languages) > 1:
         languages = ', '.join(sorted(detected_languages))
