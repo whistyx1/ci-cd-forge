@@ -5,10 +5,30 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from cli.app import confirm, run_cli
+from cli.app import choose_strategy, confirm, run_cli
 
 
 class TestCliApp(unittest.TestCase):
+    def test_choose_strategy_uses_single_when_multistage_is_unavailable(self):
+        with patch('builtins.input') as input_mock:
+            result = choose_strategy('Python')
+
+        self.assertEqual(result, 'single')
+        input_mock.assert_not_called()
+
+    def test_choose_strategy_asks_for_supported_language(self):
+        cases = [
+            ('yes', 'multi'),
+            ('no', 'single'),
+        ]
+
+        for answer, expected in cases:
+            with self.subTest(answer=answer):
+                with patch('builtins.input', return_value=answer):
+                    result = choose_strategy('Go')
+
+                self.assertEqual(result, expected)
+
     def test_confirm_accepts_yes_and_no_answers(self):
         cases = [
             ('y', True),
@@ -177,6 +197,42 @@ class TestCliApp(unittest.TestCase):
             generate_dockerfile_mock.assert_called_once_with(
                 stack=detected_stack,
                 project_path=Path(temp_dir) / 'backend',
+                strategy='single',
+            )
+            self.assertEqual(result, 0)
+            self.assertIn(f'Created: {expected_path}', stdout.getvalue())
+
+    def test_generates_multistage_dockerfile_when_confirmed(self):
+        detected_stack = {
+            'path': 'root/api',
+            'language(s)': 'Go',
+            'framework(s)': [],
+            'errors': [],
+        }
+
+        with TemporaryDirectory() as temp_dir:
+            stdout = StringIO()
+            expected_path = Path(temp_dir) / 'api' / 'Dockerfile'
+
+            with patch(
+                'builtins.input',
+                side_effect=[temp_dir, 'yes', 'yes'],
+            ):
+                with patch(
+                    'cli.app.create_stack',
+                    return_value=[detected_stack],
+                ):
+                    with patch(
+                        'cli.app.generate_recommended_dockerfile',
+                        return_value=expected_path,
+                    ) as generate_dockerfile_mock:
+                        with redirect_stdout(stdout):
+                            result = run_cli()
+
+            generate_dockerfile_mock.assert_called_once_with(
+                stack=detected_stack,
+                project_path=Path(temp_dir) / 'api',
+                strategy='multi',
             )
             self.assertEqual(result, 0)
             self.assertIn(f'Created: {expected_path}', stdout.getvalue())
@@ -218,6 +274,10 @@ class TestCliApp(unittest.TestCase):
 
             generate_compose_mock.assert_called_once_with(
                 root_path=Path(temp_dir),
+                strategies={
+                    'root/backend': 'single',
+                    'root/frontend': 'single',
+                },
             )
             self.assertEqual(result, 0)
             self.assertIn(f'Created: {expected_path}', stdout.getvalue())

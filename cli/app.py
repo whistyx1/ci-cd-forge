@@ -1,8 +1,10 @@
 from pathlib import Path
+from typing import Literal
 
 from detect.stack import create_stack
 from generators.compose.compose_service import generate_recommended_compose
 from generators.docker.service import generate_recommended_dockerfile
+from generators.docker.presets import DOCKER_PRESETS
 
 
 def run_cli() -> int:
@@ -50,14 +52,19 @@ def run_cli() -> int:
 
     try:
         if len(stacks) == 1:
+            strategy = choose_strategy(stack['language(s)'])
             generated_path = generate_recommended_dockerfile(
                 stack=stack,
                 project_path=detected_project_path,
+                strategy=strategy,
             )
         else:
+            strategies = choose_strategies(stacks)
             generated_path = generate_recommended_compose(
                 root_path=project_path,
+                strategies=strategies,
             )
+
         print(f'Created: {generated_path}')
     except (ValueError, OSError) as error:
         print(f'Error: {error}')
@@ -77,3 +84,21 @@ def confirm(prompt: str, default: bool = True) -> bool:
         if response in ('n', 'no'):
             return False
         print("Please enter 'y' or 'n'.")
+
+
+def choose_strategy(language: str) -> Literal['single', 'multi']:
+    preset = DOCKER_PRESETS.get(language)
+    if preset is None or 'multistage' not in preset:
+        return 'single'
+    if confirm(f'Use multi-stage build for {language}?'):
+        return 'multi'
+    return 'single'
+
+
+def choose_strategies(
+    stacks: list[dict],
+) -> dict[str, Literal['single', 'multi']]:
+    return {
+        stack['path']: choose_strategy(stack['language(s)'])
+        for stack in stacks
+    }
