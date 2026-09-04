@@ -1,11 +1,5 @@
-import sys
-import json
-from detect.stack import create_stack
+from cli.app import run_cli
 
-if __name__ == "__main__":
-    try:
-        path = sys.argv[1]
-        stack = create_stack(path)
-        print(json.dumps(stack, indent=2))
-    except IndexError:
-        print("You entered an invalid path. Please provide a valid directory path as an argument.")
+
+if __name__ == '__main__':
+    raise SystemExit(run_cli())
