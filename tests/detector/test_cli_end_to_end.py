@@ -12,7 +12,7 @@ class TestCliEndToEnd(unittest.TestCase):
         with TemporaryDirectory() as temp_dir:
             project_path = Path(temp_dir) / 'apps' / 'job-seeker'
             project_path.mkdir(parents=True)
-            main_path = Path(__file__).resolve().parents[1] / 'main.py'
+            main_path = Path(__file__).resolve().parents[2] / 'main.py'
             requirements_path = project_path / 'requirements.txt'
             manage_path = project_path / 'manage.py'
             requirements_path.write_text(
