@@ -8,7 +8,7 @@ from detect.stack import create_stack
 from generators.docker.service import generate_recommended_dockerfile
 
 
-FIXTURES_PATH = Path(__file__).parent / 'fixtures'
+FIXTURES_PATH = Path(__file__).resolve().parents[1] / 'fixtures'
 
 
 def docker_is_available() -> bool:

@@ -28,6 +28,21 @@ class TestDockerRecommendationResolver(unittest.TestCase):
             },
         )
 
+    def test_prefers_explicit_stack_port_over_preset(self):
+        for stack_port in (9090, None):
+            with self.subTest(port=stack_port):
+                with TemporaryDirectory() as temp_dir:
+                    result = resolve_docker_recommendation(
+                        stack={
+                            'language(s)': 'Java',
+                            'port': stack_port,
+                            'commands': {'start_command': 'java -jar app.jar'},
+                        },
+                        project_path=Path(temp_dir),
+                    )
+
+                self.assertEqual(result['options']['port'], stack_port)
+
     def test_resolves_multistage_artifact_from_commands(self):
         with TemporaryDirectory() as temp_dir:
             project_path = Path(temp_dir)
@@ -81,6 +96,25 @@ class TestDockerRecommendationResolver(unittest.TestCase):
             result['requires_confirmation'],
             ['start_command', 'project_name', 'artifact_source'],
         )
+
+    def test_uses_confirmed_multistage_values_from_stack(self):
+        with TemporaryDirectory() as temp_dir:
+            result = resolve_docker_recommendation(
+                stack={
+                    'language(s)': 'Java',
+                    'commands': {'start_command': 'java Main'},
+                    'project_name': '  api-service  ',
+                    'artifact_source': '  /app/build/api.jar  ',
+                },
+                project_path=Path(temp_dir),
+                strategy='multi',
+            )
+
+        self.assertEqual(
+            result['options']['artifact_source'],
+            '/app/build/api.jar',
+        )
+        self.assertEqual(result['requires_confirmation'], [])
 
     def test_rejects_unavailable_multistage_preset(self):
         with TemporaryDirectory() as temp_dir:

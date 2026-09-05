@@ -36,7 +36,7 @@ def resolve_docker_recommendation(
     options: DockerGeneratorOptions = {
         'base_image': preset['base_image'],
         'workdir': preset['workdir'],
-        'port': preset['port'],
+        'port': stack.get('port', preset['port']),
         'strategy': strategy,
     }
     setup_command = preset.get('setup_command')
@@ -60,24 +60,35 @@ def resolve_docker_recommendation(
             f'Multi-stage preset is not available for {language}',
         )
 
-    project_name = _detect_project_name(
-        language=language,
-        project_path=project_path,
-        stack=stack,
-    )
+    project_name = stack.get('project_name')
+
+    if isinstance(project_name, str) and project_name.strip():
+        project_name = project_name.strip()
+    else:
+        project_name = _detect_project_name(
+            language=language,
+            project_path=project_path,
+            stack=stack,
+        )
     if project_name is None:
         project_name = 'app'
         requires_confirmation.append('project_name')
 
-    artifact_source = _detect_artifact_source(
-        language=language,
-        stack=stack,
-        workdir=preset['workdir'],
-    )
-    if artifact_source is None:
-        artifact_source = multistage['artifact_source_template'].format(
-            project_name=project_name,
+    artifact_source = stack.get('artifact_source')
+
+    if isinstance(artifact_source, str) and artifact_source.strip():
+        artifact_source = artifact_source.strip()
+    else:
+        artifact_source = _detect_artifact_source(
+            language=language,
+            stack=stack,
+            workdir=preset['workdir'],
         )
+
+    if artifact_source is None:
+        artifact_source = multistage[
+            'artifact_source_template'
+        ].format(project_name=project_name)
         requires_confirmation.append('artifact_source')
 
     artifact_destination = (
