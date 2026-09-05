@@ -2,7 +2,13 @@ from pathlib import Path
 
 from cli.display import display_errors, display_existing_paths, display_stacks
 from cli.paths import get_output_paths, resolve_project_path
-from cli.prompts import choose_strategies, choose_strategy, confirm
+from cli.prompts import (
+    ask_port,
+    ask_start_command,
+    choose_strategies,
+    choose_strategy,
+    confirm,
+)
 from detect.stack import create_stack
 from generators.compose.compose_service import generate_recommended_compose
 from generators.docker.service import generate_recommended_dockerfile
@@ -31,6 +37,21 @@ def run_cli() -> int:
     if errors:
         display_errors(errors)
         return 1
+
+    for stack in stacks:
+        commands = stack.get('commands') or {}
+        stack['commands'] = commands
+
+        if not commands.get('start_command'):
+            start_command = ask_start_command(stack)
+
+            if start_command is None:
+                print('Start command is required. Generation cancelled.')
+                return 0
+            commands['start_command'] = start_command
+
+        if 'port' not in stack:
+            stack['port'] = ask_port(stack)
 
     if not confirm('Generate container files?'):
         print('Generation cancelled.')
@@ -70,6 +91,7 @@ def run_cli() -> int:
             strategies = choose_strategies(stacks)
             generated_path = generate_recommended_compose(
                 root_path=project_path,
+                stacks=stacks,
                 strategies=strategies,
                 force=force,
             )

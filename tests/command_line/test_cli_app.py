@@ -6,10 +6,89 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from cli.app import run_cli
-from cli.prompts import choose_strategy, confirm
+from cli.prompts import ask_port, ask_start_command, choose_strategy, confirm
 
 
 class TestCliApp(unittest.TestCase):
+    def test_ask_port_returns_valid_port(self):
+        stack = {
+            'path': 'root/backend',
+            'language(s)': 'Python',
+        }
+        stdout = StringIO()
+
+        with patch('builtins.input', return_value='  8000  '):
+            with redirect_stdout(stdout):
+                result = ask_port(stack)
+
+        self.assertEqual(result, 8000)
+
+    def test_ask_port_returns_none_for_empty_input(self):
+        stack = {
+            'path': 'root/backend',
+            'language(s)': 'Python',
+        }
+        stdout = StringIO()
+
+        with patch('builtins.input', return_value='   '):
+            with redirect_stdout(stdout):
+                result = ask_port(stack)
+
+        self.assertIsNone(result)
+
+    def test_ask_port_repeats_after_invalid_input(self):
+        stack = {
+            'path': 'root/backend',
+            'language(s)': 'Python',
+        }
+        stdout = StringIO()
+
+        with patch(
+            'builtins.input',
+            side_effect=['port', '0', '65536', '3000'],
+        ):
+            with redirect_stdout(stdout):
+                result = ask_port(stack)
+
+        self.assertEqual(result, 3000)
+        self.assertEqual(
+            stdout.getvalue().count(
+                'Port must be a number from 1 to 65535.'
+            ),
+            3,
+        )
+
+    def test_ask_start_command_returns_stripped_command(self):
+        stack = {
+            'path': 'root/backend',
+            'language(s)': 'Python',
+        }
+        stdout = StringIO()
+
+        with patch(
+            'builtins.input',
+            return_value='  python app.py  ',
+        ):
+            with redirect_stdout(stdout):
+                result = ask_start_command(stack)
+
+        self.assertEqual(result, 'python app.py')
+        self.assertIn('Language: Python', stdout.getvalue())
+        self.assertIn('Path: root/backend', stdout.getvalue())
+
+    def test_ask_start_command_returns_none_for_empty_input(self):
+        stack = {
+            'path': 'root/backend',
+            'language(s)': 'Python',
+        }
+        stdout = StringIO()
+
+        with patch('builtins.input', return_value='   '):
+            with redirect_stdout(stdout):
+                result = ask_start_command(stack)
+
+        self.assertIsNone(result)
+
     def test_choose_strategy_uses_single_when_multistage_is_unavailable(self):
         with patch('builtins.input') as input_mock:
             result = choose_strategy('Python')
@@ -102,6 +181,8 @@ class TestCliApp(unittest.TestCase):
                         'matched': 'django',
                     },
                 ],
+                'commands': {'start_command': 'python manage.py runserver'},
+                'port': None,
             },
         ]
 
@@ -168,12 +249,165 @@ class TestCliApp(unittest.TestCase):
             output,
         )
 
+    def test_adds_missing_start_command_before_generation(self):
+        detected_stack = {
+            'path': 'root/backend',
+            'language(s)': 'Python',
+            'framework(s)': [],
+            'errors': [],
+            'commands': {'start_command': None},
+            'port': None,
+        }
+
+        with TemporaryDirectory() as temp_dir:
+            stdout = StringIO()
+            expected_path = Path(temp_dir) / 'backend' / 'Dockerfile'
+
+            with patch(
+                'builtins.input',
+                side_effect=[temp_dir, '  python app.py  ', 'yes'],
+            ):
+                with patch(
+                    'cli.app.create_stack',
+                    return_value=[detected_stack],
+                ):
+                    with patch(
+                        'cli.app.generate_recommended_dockerfile',
+                        return_value=expected_path,
+                    ) as generate_dockerfile_mock:
+                        with redirect_stdout(stdout):
+                            run_cli()
+
+            self.assertEqual(
+                detected_stack['commands']['start_command'],
+                'python app.py',
+            )
+            generate_dockerfile_mock.assert_called_once()
+
+    def test_cancels_generation_when_start_command_is_empty(self):
+        detected_stack = {
+            'path': 'root/backend',
+            'language(s)': 'Python',
+            'framework(s)': [],
+            'errors': [],
+        }
+
+        with TemporaryDirectory() as temp_dir:
+            stdout = StringIO()
+
+            with patch(
+                'builtins.input',
+                side_effect=[temp_dir, '   '],
+            ):
+                with patch(
+                    'cli.app.create_stack',
+                    return_value=[detected_stack],
+                ):
+                    with patch(
+                        'cli.app.generate_recommended_dockerfile',
+                    ) as generate_dockerfile_mock:
+                        with redirect_stdout(stdout):
+                            result = run_cli()
+
+            generate_dockerfile_mock.assert_not_called()
+            self.assertEqual(result, 0)
+            self.assertIn(
+                'Start command is required. Generation cancelled.',
+                stdout.getvalue(),
+            )
+
+    def test_adds_entered_port_before_generation(self):
+        detected_stack = {
+            'path': 'root/backend',
+            'language(s)': 'Python',
+            'framework(s)': [],
+            'errors': [],
+            'commands': {'start_command': 'python app.py'},
+        }
+
+        with TemporaryDirectory() as temp_dir:
+            stdout = StringIO()
+            expected_path = Path(temp_dir) / 'backend' / 'Dockerfile'
+
+            with patch(
+                'builtins.input',
+                side_effect=[temp_dir, '8000', 'yes'],
+            ):
+                with patch(
+                    'cli.app.create_stack',
+                    return_value=[detected_stack],
+                ):
+                    with patch(
+                        'cli.app.generate_recommended_dockerfile',
+                        return_value=expected_path,
+                    ) as generate_dockerfile_mock:
+                        with redirect_stdout(stdout):
+                            result = run_cli()
+
+        self.assertEqual(result, 0)
+        self.assertEqual(detected_stack['port'], 8000)
+        generate_dockerfile_mock.assert_called_once_with(
+            stack=detected_stack,
+            project_path=Path(temp_dir) / 'backend',
+            strategy='single',
+            force=False,
+        )
+
+    def test_asks_for_start_command_for_each_project(self):
+        detected_stacks = [
+            {
+                'path': 'root/backend',
+                'language(s)': 'Python',
+                'framework(s)': [],
+                'errors': [],
+                'port': None,
+            },
+            {
+                'path': 'root/frontend',
+                'language(s)': 'JavaScript',
+                'framework(s)': [],
+                'errors': [],
+                'port': None,
+            },
+        ]
+
+        with TemporaryDirectory() as temp_dir:
+            stdout = StringIO()
+
+            with patch(
+                'builtins.input',
+                side_effect=[
+                    temp_dir,
+                    'python app.py',
+                    'npm start',
+                    'no',
+                ],
+            ):
+                with patch(
+                    'cli.app.create_stack',
+                    return_value=detected_stacks,
+                ):
+                    with redirect_stdout(stdout):
+                        result = run_cli()
+
+        self.assertEqual(result, 0)
+        self.assertEqual(
+            detected_stacks[0]['commands']['start_command'],
+            'python app.py',
+        )
+        self.assertEqual(
+            detected_stacks[1]['commands']['start_command'],
+            'npm start',
+        )
+
     def test_generates_dockerfile_for_single_project(self):
         detected_stack = {
             'path': 'root/backend',
             'language(s)': 'Python',
             'framework(s)': [],
             'errors': [],
+            'commands': {'start_command': 'python app.py'},
+            'port': None,
         }
 
         with TemporaryDirectory() as temp_dir:
@@ -210,6 +444,8 @@ class TestCliApp(unittest.TestCase):
             'language(s)': 'Go',
             'framework(s)': [],
             'errors': [],
+            'commands': {'start_command': './app'},
+            'port': None,
         }
 
         with TemporaryDirectory() as temp_dir:
@@ -246,6 +482,8 @@ class TestCliApp(unittest.TestCase):
             'language(s)': 'Python',
             'framework(s)': [],
             'errors': [],
+            'commands': {'start_command': 'python app.py'},
+            'port': None,
         }
 
         with TemporaryDirectory() as temp_dir:
@@ -286,6 +524,8 @@ class TestCliApp(unittest.TestCase):
             'language(s)': 'Python',
             'framework(s)': [],
             'errors': [],
+            'commands': {'start_command': 'python app.py'},
+            'port': None,
         }
 
         with TemporaryDirectory() as temp_dir:
@@ -329,12 +569,16 @@ class TestCliApp(unittest.TestCase):
                 'language(s)': 'Python',
                 'framework(s)': [],
                 'errors': [],
+                'commands': {'start_command': 'python app.py'},
+                'port': None,
             },
             {
                 'path': 'root/frontend',
                 'language(s)': 'JavaScript',
                 'framework(s)': [],
                 'errors': [],
+                'commands': {'start_command': 'npm start'},
+                'port': None,
             },
         ]
 
@@ -359,6 +603,7 @@ class TestCliApp(unittest.TestCase):
 
             generate_compose_mock.assert_called_once_with(
                 root_path=Path(temp_dir),
+                stacks=detected_stacks,
                 strategies={
                     'root/backend': 'single',
                     'root/frontend': 'single',
@@ -375,12 +620,16 @@ class TestCliApp(unittest.TestCase):
                 'language(s)': 'Python',
                 'framework(s)': [],
                 'errors': [],
+                'commands': {'start_command': 'python app.py'},
+                'port': None,
             },
             {
                 'path': 'root/frontend',
                 'language(s)': 'JavaScript',
                 'framework(s)': [],
                 'errors': [],
+                'commands': {'start_command': 'npm start'},
+                'port': None,
             },
         ]
 
@@ -424,12 +673,16 @@ class TestCliApp(unittest.TestCase):
                 'language(s)': 'Python',
                 'framework(s)': [],
                 'errors': [],
+                'commands': {'start_command': 'python app.py'},
+                'port': None,
             },
             {
                 'path': 'root/frontend',
                 'language(s)': 'JavaScript',
                 'framework(s)': [],
                 'errors': [],
+                'commands': {'start_command': 'npm start'},
+                'port': None,
             },
         ]
 
@@ -466,6 +719,7 @@ class TestCliApp(unittest.TestCase):
 
             generate_compose_mock.assert_called_once_with(
                 root_path=root_path,
+                stacks=detected_stacks,
                 strategies={
                     'root/backend': 'single',
                     'root/frontend': 'single',
@@ -483,6 +737,8 @@ class TestCliApp(unittest.TestCase):
             'language(s)': 'Python',
             'framework(s)': [],
             'errors': [],
+            'commands': {'start_command': 'python app.py'},
+            'port': None,
         }
 
         with TemporaryDirectory() as temp_dir:

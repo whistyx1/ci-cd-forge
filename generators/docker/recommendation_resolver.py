@@ -36,7 +36,7 @@ def resolve_docker_recommendation(
     options: DockerGeneratorOptions = {
         'base_image': preset['base_image'],
         'workdir': preset['workdir'],
-        'port': preset['port'],
+        'port': stack.get('port', preset['port']),
         'strategy': strategy,
     }
     setup_command = preset.get('setup_command')

@@ -21,7 +21,7 @@ class TestCliEndToEnd(unittest.TestCase):
             manage_path.write_text('', encoding='utf-8')
             completed_process = subprocess.run(
                 [sys.executable, str(main_path)],
-                input=f'{temp_dir}\nn\n',
+                input=f'{temp_dir}\n\nn\n',
                 capture_output=True,
                 text=True,
                 timeout=10,
@@ -48,7 +48,7 @@ class TestCliEndToEnd(unittest.TestCase):
 
             completed_process = subprocess.run(
                 [sys.executable, str(main_path)],
-                input=f'{temp_dir}\ny\n',
+                input=f'{temp_dir}\n8000\ny\n',
                 capture_output=True,
                 text=True,
                 timeout=10,
@@ -68,6 +68,7 @@ class TestCliEndToEnd(unittest.TestCase):
                 'COPY requirements.txt .\n'
                 'RUN python -m pip install -r requirements.txt\n'
                 'COPY . .\n'
+                'EXPOSE 8000\n'
                 'CMD ["sh", "-c", '
                 '"python manage.py runserver 0.0.0.0:8000"]\n',
             )

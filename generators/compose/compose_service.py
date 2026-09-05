@@ -8,16 +8,19 @@ from generators.docker.service import generate_recommended_dockerfile
 
 def generate_recommended_compose(
     root_path: Path,
+    stacks: list[dict] | None = None,
     strategies: dict[str, Literal['single', 'multi']] | None = None,
     force: bool = False,
 ) -> Path:
-    stacks = create_stack(str(root_path))
+    project_stacks = stacks
+    if project_stacks is None:
+        project_stacks = create_stack(str(root_path))
     project_strategies = strategies or {}
 
-    if not stacks or len(stacks) < 2:
+    if len(project_stacks) < 2:
         raise ValueError('Compose generation requires at least two projects')
 
-    for stack in stacks:
+    for stack in project_stacks:
         relative_path = Path(stack['path']).parts[1:]
         project_path = root_path.joinpath(*relative_path)
         strategy = project_strategies.get(stack['path'], 'single')
@@ -29,7 +32,7 @@ def generate_recommended_compose(
         )
 
     return generate_project_compose(
-        stacks=stacks,
+        stacks=project_stacks,
         project_path=root_path,
         force=force,
     )

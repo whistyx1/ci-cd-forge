@@ -32,3 +32,31 @@ def choose_strategies(
         stack['path']: choose_strategy(stack['language(s)'])
         for stack in stacks
     }
+
+
+def ask_start_command(stack: dict) -> str | None:
+    print(f"Language: {stack['language(s)']}")
+    print(f"Path: {stack['path']}")
+    start_command = input('Enter start command: ').strip()
+    if not start_command:
+        return None
+    return start_command
+
+
+def ask_port(stack: dict) -> int | None:
+    print(f"Language: {stack['language(s)']}")
+    print(f"Path: {stack['path']}")
+
+    while True:
+        response = input(
+            'Enter application port (leave empty for none): '
+        ).strip()
+
+        if not response:
+            return None
+
+        if response.isdigit():
+            port = int(response)
+            if 1 <= port <= 65535:
+                return port
+        print('Port must be a number from 1 to 65535.')
