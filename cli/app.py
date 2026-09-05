@@ -50,6 +50,26 @@ def run_cli() -> int:
     relative_path = Path(stack['path']).parts[1:]
     detected_project_path = project_path.joinpath(*relative_path)
 
+    output_paths = get_output_paths(stacks, project_path)
+    existing_paths = [
+        output_path
+        for output_path in output_paths
+        if output_path.exists()
+    ]
+
+    force = False
+
+    if existing_paths:
+        print('Existing files:')
+        for existing_path in existing_paths:
+            print(f'- {existing_path}')
+
+        if not confirm('Overwrite existing files?', default=False):
+            print('Overwrite cancelled.')
+            return 0
+
+        force = True
+
     try:
         if len(stacks) == 1:
             strategy = choose_strategy(stack['language(s)'])
@@ -57,12 +77,14 @@ def run_cli() -> int:
                 stack=stack,
                 project_path=detected_project_path,
                 strategy=strategy,
+                force=force,
             )
         else:
             strategies = choose_strategies(stacks)
             generated_path = generate_recommended_compose(
                 root_path=project_path,
                 strategies=strategies,
+                force=force,
             )
 
         print(f'Created: {generated_path}')
@@ -102,3 +124,19 @@ def choose_strategies(
         stack['path']: choose_strategy(stack['language(s)'])
         for stack in stacks
     }
+
+
+def get_output_paths(
+    stacks: list[dict],
+    root_path: Path,
+) -> list[Path]:
+    output_paths = []
+    for stack in stacks:
+        relative_path = Path(stack['path']).parts[1:]
+        project_path = root_path.joinpath(*relative_path)
+        output_paths.append(project_path / 'Dockerfile')
+
+    if len(stacks) > 1:
+        output_paths.append(root_path / 'compose.yaml')
+
+    return output_paths

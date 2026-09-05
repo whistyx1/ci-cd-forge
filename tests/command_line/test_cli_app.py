@@ -198,6 +198,7 @@ class TestCliApp(unittest.TestCase):
                 stack=detected_stack,
                 project_path=Path(temp_dir) / 'backend',
                 strategy='single',
+                force=False,
             )
             self.assertEqual(result, 0)
             self.assertIn(f'Created: {expected_path}', stdout.getvalue())
@@ -233,9 +234,92 @@ class TestCliApp(unittest.TestCase):
                 stack=detected_stack,
                 project_path=Path(temp_dir) / 'api',
                 strategy='multi',
+                force=False,
             )
             self.assertEqual(result, 0)
             self.assertIn(f'Created: {expected_path}', stdout.getvalue())
+
+    def test_does_not_overwrite_existing_dockerfile_without_confirmation(self):
+        detected_stack = {
+            'path': 'root/backend',
+            'language(s)': 'Python',
+            'framework(s)': [],
+            'errors': [],
+        }
+
+        with TemporaryDirectory() as temp_dir:
+            stdout = StringIO()
+            project_path = Path(temp_dir) / 'backend'
+            project_path.mkdir()
+            dockerfile_path = project_path / 'Dockerfile'
+            dockerfile_path.write_text(
+                'existing Dockerfile\n',
+                encoding='utf-8',
+            )
+
+            with patch(
+                'builtins.input',
+                side_effect=[temp_dir, 'yes', 'no'],
+            ):
+                with patch(
+                    'cli.app.create_stack',
+                    return_value=[detected_stack],
+                ):
+                    with patch(
+                        'cli.app.generate_recommended_dockerfile',
+                    ) as generate_dockerfile_mock:
+                        with redirect_stdout(stdout):
+                            result = run_cli()
+
+            generate_dockerfile_mock.assert_not_called()
+            self.assertEqual(result, 0)
+            self.assertEqual(
+                dockerfile_path.read_text(encoding='utf-8'),
+                'existing Dockerfile\n',
+            )
+            self.assertIn('Overwrite cancelled.', stdout.getvalue())
+
+    def test_overwrites_existing_dockerfile_when_confirmed(self):
+        detected_stack = {
+            'path': 'root/backend',
+            'language(s)': 'Python',
+            'framework(s)': [],
+            'errors': [],
+        }
+
+        with TemporaryDirectory() as temp_dir:
+            stdout = StringIO()
+            project_path = Path(temp_dir) / 'backend'
+            project_path.mkdir()
+            dockerfile_path = project_path / 'Dockerfile'
+            dockerfile_path.write_text(
+                'existing Dockerfile\n',
+                encoding='utf-8',
+            )
+
+            with patch(
+                'builtins.input',
+                side_effect=[temp_dir, 'yes', 'yes'],
+            ):
+                with patch(
+                    'cli.app.create_stack',
+                    return_value=[detected_stack],
+                ):
+                    with patch(
+                        'cli.app.generate_recommended_dockerfile',
+                        return_value=dockerfile_path,
+                    ) as generate_dockerfile_mock:
+                        with redirect_stdout(stdout):
+                            result = run_cli()
+
+            generate_dockerfile_mock.assert_called_once_with(
+                stack=detected_stack,
+                project_path=project_path,
+                strategy='single',
+                force=True,
+            )
+            self.assertEqual(result, 0)
+            self.assertIn(f'Created: {dockerfile_path}', stdout.getvalue())
 
     def test_generates_compose_for_multiple_projects(self):
         detected_stacks = [
@@ -278,9 +362,119 @@ class TestCliApp(unittest.TestCase):
                     'root/backend': 'single',
                     'root/frontend': 'single',
                 },
+                force=False,
             )
             self.assertEqual(result, 0)
             self.assertIn(f'Created: {expected_path}', stdout.getvalue())
+
+    def test_cancels_compose_when_nested_dockerfile_exists(self):
+        detected_stacks = [
+            {
+                'path': 'root/backend',
+                'language(s)': 'Python',
+                'framework(s)': [],
+                'errors': [],
+            },
+            {
+                'path': 'root/frontend',
+                'language(s)': 'JavaScript',
+                'framework(s)': [],
+                'errors': [],
+            },
+        ]
+
+        with TemporaryDirectory() as temp_dir:
+            stdout = StringIO()
+            backend_path = Path(temp_dir) / 'backend'
+            backend_path.mkdir()
+            dockerfile_path = backend_path / 'Dockerfile'
+            dockerfile_path.write_text(
+                'existing Dockerfile\n',
+                encoding='utf-8',
+            )
+
+            with patch(
+                'builtins.input',
+                side_effect=[temp_dir, 'yes', 'no'],
+            ):
+                with patch(
+                    'cli.app.create_stack',
+                    return_value=detected_stacks,
+                ):
+                    with patch(
+                        'cli.app.generate_recommended_compose',
+                    ) as generate_compose_mock:
+                        with redirect_stdout(stdout):
+                            result = run_cli()
+
+            generate_compose_mock.assert_not_called()
+            self.assertEqual(result, 0)
+            self.assertEqual(
+                dockerfile_path.read_text(encoding='utf-8'),
+                'existing Dockerfile\n',
+            )
+            self.assertIn(str(dockerfile_path), stdout.getvalue())
+            self.assertIn('Overwrite cancelled.', stdout.getvalue())
+
+    def test_overwrites_existing_compose_files_when_confirmed(self):
+        detected_stacks = [
+            {
+                'path': 'root/backend',
+                'language(s)': 'Python',
+                'framework(s)': [],
+                'errors': [],
+            },
+            {
+                'path': 'root/frontend',
+                'language(s)': 'JavaScript',
+                'framework(s)': [],
+                'errors': [],
+            },
+        ]
+
+        with TemporaryDirectory() as temp_dir:
+            stdout = StringIO()
+            root_path = Path(temp_dir)
+            backend_path = root_path / 'backend'
+            backend_path.mkdir()
+            dockerfile_path = backend_path / 'Dockerfile'
+            dockerfile_path.write_text(
+                'existing Dockerfile\n',
+                encoding='utf-8',
+            )
+            compose_path = root_path / 'compose.yaml'
+            compose_path.write_text(
+                'existing Compose file\n',
+                encoding='utf-8',
+            )
+
+            with patch(
+                'builtins.input',
+                side_effect=[temp_dir, 'yes', 'yes'],
+            ):
+                with patch(
+                    'cli.app.create_stack',
+                    return_value=detected_stacks,
+                ):
+                    with patch(
+                        'cli.app.generate_recommended_compose',
+                        return_value=compose_path,
+                    ) as generate_compose_mock:
+                        with redirect_stdout(stdout):
+                            result = run_cli()
+
+            generate_compose_mock.assert_called_once_with(
+                root_path=root_path,
+                strategies={
+                    'root/backend': 'single',
+                    'root/frontend': 'single',
+                },
+                force=True,
+            )
+            self.assertEqual(result, 0)
+            self.assertIn(str(dockerfile_path), stdout.getvalue())
+            self.assertIn(str(compose_path), stdout.getvalue())
+            self.assertIn(f'Created: {compose_path}', stdout.getvalue())
 
     def test_reports_generator_error_without_traceback(self):
         detected_stack = {
