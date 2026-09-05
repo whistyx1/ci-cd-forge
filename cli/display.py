@@ -24,3 +24,10 @@ def display_existing_paths(existing_paths: list[Path]) -> None:
     print('Existing files:')
     for existing_path in existing_paths:
         print(f'- {existing_path}')
+
+
+def display_created_paths(paths: list[Path]) -> None:
+    print('Created files:')
+    for path in paths:
+        if path.is_file():
+            print(f'- {path}')

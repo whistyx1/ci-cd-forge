@@ -6,10 +6,88 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from cli.app import run_cli
-from cli.prompts import ask_port, ask_start_command, choose_strategy, confirm
+from cli.display import display_created_paths
+from cli.prompts import (
+    ask_port,
+    ask_required_value,
+    ask_start_command,
+    choose_strategy,
+    confirm,
+    confirm_multistage_options,
+)
 
 
 class TestCliApp(unittest.TestCase):
+    def test_display_created_paths_shows_only_existing_files(self):
+        with TemporaryDirectory() as temp_dir:
+            stdout = StringIO()
+            existing_path = Path(temp_dir) / 'Dockerfile'
+            missing_path = Path(temp_dir) / 'compose.yaml'
+            existing_path.write_text(
+                'FROM python:3.12-slim\n',
+                encoding='utf-8',
+            )
+
+            with redirect_stdout(stdout):
+                display_created_paths([existing_path, missing_path])
+
+        self.assertEqual(
+            stdout.getvalue(),
+            f'Created files:\n- {existing_path}\n',
+        )
+
+    def test_ask_required_value_repeats_after_empty_input(self):
+        stdout = StringIO()
+
+        with patch(
+            'builtins.input',
+            side_effect=['   ', '  api-service  '],
+        ):
+            with redirect_stdout(stdout):
+                result = ask_required_value('Enter project name')
+
+        self.assertEqual(result, 'api-service')
+        self.assertEqual(stdout.getvalue(), 'This field is required.\n')
+
+    def test_confirm_multistage_options_updates_supported_fields(self):
+        stack = {
+            'path': 'root/backend',
+            'language(s)': 'Java',
+            'commands': {'start_command': 'java Main'},
+        }
+
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+
+            with patch(
+                'cli.prompts.resolve_docker_recommendation',
+                return_value={
+                    'options': {},
+                    'requires_confirmation': [
+                        'start_command',
+                        'project_name',
+                        'artifact_source',
+                    ],
+                },
+            ) as recommendation_mock:
+                with patch(
+                    'builtins.input',
+                    side_effect=['api-service', '/app/target/api.jar'],
+                ):
+                    confirm_multistage_options(stack, project_path)
+
+        recommendation_mock.assert_called_once_with(
+            stack=stack,
+            project_path=project_path,
+            strategy='multi',
+        )
+        self.assertEqual(stack['project_name'], 'api-service')
+        self.assertEqual(
+            stack['artifact_source'],
+            '/app/target/api.jar',
+        )
+        self.assertNotIn('start_command', stack)
+
     def test_ask_port_returns_valid_port(self):
         stack = {
             'path': 'root/backend',
@@ -436,7 +514,7 @@ class TestCliApp(unittest.TestCase):
                 force=False,
             )
             self.assertEqual(result, 0)
-            self.assertIn(f'Created: {expected_path}', stdout.getvalue())
+            self.assertIn('Created files:', stdout.getvalue())
 
     def test_generates_multistage_dockerfile_when_confirmed(self):
         detected_stack = {
@@ -454,7 +532,7 @@ class TestCliApp(unittest.TestCase):
 
             with patch(
                 'builtins.input',
-                side_effect=[temp_dir, 'yes', 'yes'],
+                side_effect=[temp_dir, 'yes', 'yes', 'api'],
             ):
                 with patch(
                     'cli.app.create_stack',
@@ -474,7 +552,7 @@ class TestCliApp(unittest.TestCase):
                 force=False,
             )
             self.assertEqual(result, 0)
-            self.assertIn(f'Created: {expected_path}', stdout.getvalue())
+            self.assertIn('Created files:', stdout.getvalue())
 
     def test_does_not_overwrite_existing_dockerfile_without_confirmation(self):
         detected_stack = {
@@ -560,7 +638,7 @@ class TestCliApp(unittest.TestCase):
                 force=True,
             )
             self.assertEqual(result, 0)
-            self.assertIn(f'Created: {dockerfile_path}', stdout.getvalue())
+            self.assertIn('Created files:', stdout.getvalue())
 
     def test_generates_compose_for_multiple_projects(self):
         detected_stacks = [
@@ -611,7 +689,70 @@ class TestCliApp(unittest.TestCase):
                 force=False,
             )
             self.assertEqual(result, 0)
-            self.assertIn(f'Created: {expected_path}', stdout.getvalue())
+            self.assertIn('Created files:', stdout.getvalue())
+
+    def test_confirms_multistage_options_for_selected_compose_project(self):
+        detected_stacks = [
+            {
+                'path': 'root/backend',
+                'language(s)': 'Python',
+                'framework(s)': [],
+                'errors': [],
+                'commands': {'start_command': 'python app.py'},
+                'port': None,
+            },
+            {
+                'path': 'root/worker',
+                'language(s)': 'Go',
+                'framework(s)': [],
+                'errors': [],
+                'commands': {'start_command': './worker'},
+                'port': None,
+            },
+        ]
+
+        with TemporaryDirectory() as temp_dir:
+            stdout = StringIO()
+            root_path = Path(temp_dir)
+            expected_path = root_path / 'compose.yaml'
+            strategies = {
+                'root/backend': 'single',
+                'root/worker': 'multi',
+            }
+
+            with patch(
+                'builtins.input',
+                side_effect=[temp_dir, 'yes'],
+            ):
+                with patch(
+                    'cli.app.create_stack',
+                    return_value=detected_stacks,
+                ):
+                    with patch(
+                        'cli.app.choose_strategies',
+                        return_value=strategies,
+                    ):
+                        with patch(
+                            'cli.app.confirm_multistage_options',
+                        ) as confirm_multistage_mock:
+                            with patch(
+                                'cli.app.generate_recommended_compose',
+                                return_value=expected_path,
+                            ) as generate_compose_mock:
+                                with redirect_stdout(stdout):
+                                    result = run_cli()
+
+            confirm_multistage_mock.assert_called_once_with(
+                stack=detected_stacks[1],
+                project_path=root_path / 'worker',
+            )
+            generate_compose_mock.assert_called_once_with(
+                root_path=root_path,
+                stacks=detected_stacks,
+                strategies=strategies,
+                force=False,
+            )
+            self.assertEqual(result, 0)
 
     def test_cancels_compose_when_nested_dockerfile_exists(self):
         detected_stacks = [
@@ -729,7 +870,7 @@ class TestCliApp(unittest.TestCase):
             self.assertEqual(result, 0)
             self.assertIn(str(dockerfile_path), stdout.getvalue())
             self.assertIn(str(compose_path), stdout.getvalue())
-            self.assertIn(f'Created: {compose_path}', stdout.getvalue())
+            self.assertIn('Created files:', stdout.getvalue())
 
     def test_reports_generator_error_without_traceback(self):
         detected_stack = {

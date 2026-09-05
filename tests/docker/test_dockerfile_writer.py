@@ -64,6 +64,32 @@ class TestWritesDockerfile(unittest.TestCase):
                 new_text,
             )
 
+    def test_normalizes_dockerfile_name_case_when_forced(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            wrong_case_path = project_path / 'DockerFile'
+            wrong_case_path.write_text(
+                'FROM python:3.11-slim\n',
+                encoding='utf-8',
+            )
+            new_text = 'FROM python:3.12-slim\n'
+
+            result = write_dockerfile(
+                project_path=project_path,
+                dockerfile_text=new_text,
+                force=True,
+            )
+
+            self.assertEqual(result, project_path / 'Dockerfile')
+            self.assertEqual(
+                {path.name for path in project_path.iterdir()},
+                {'Dockerfile'},
+            )
+            self.assertEqual(
+                result.read_text(encoding='utf-8'),
+                new_text,
+            )
+
     def test_rejects_missing_project_directory(self):
         with TemporaryDirectory() as temp_dir:
             project_path = Path(temp_dir) / 'missing-project'

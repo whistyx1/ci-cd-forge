@@ -97,6 +97,25 @@ class TestDockerRecommendationResolver(unittest.TestCase):
             ['start_command', 'project_name', 'artifact_source'],
         )
 
+    def test_uses_confirmed_multistage_values_from_stack(self):
+        with TemporaryDirectory() as temp_dir:
+            result = resolve_docker_recommendation(
+                stack={
+                    'language(s)': 'Java',
+                    'commands': {'start_command': 'java Main'},
+                    'project_name': '  api-service  ',
+                    'artifact_source': '  /app/build/api.jar  ',
+                },
+                project_path=Path(temp_dir),
+                strategy='multi',
+            )
+
+        self.assertEqual(
+            result['options']['artifact_source'],
+            '/app/build/api.jar',
+        )
+        self.assertEqual(result['requires_confirmation'], [])
+
     def test_rejects_unavailable_multistage_preset(self):
         with TemporaryDirectory() as temp_dir:
             with self.assertRaisesRegex(ValueError, 'Python'):

@@ -1,6 +1,10 @@
+from pathlib import Path
 from typing import Literal
 
 from generators.docker.presets import DOCKER_PRESETS
+from generators.docker.recommendation_resolver import (
+    resolve_docker_recommendation,
+)
 
 
 def confirm(prompt: str, default: bool = True) -> bool:
@@ -60,3 +64,35 @@ def ask_port(stack: dict) -> int | None:
             if 1 <= port <= 65535:
                 return port
         print('Port must be a number from 1 to 65535.')
+
+
+def ask_required_value(prompt: str) -> str:
+    while True:
+        value = input(f'{prompt}: ').strip()
+
+        if value:
+            return value
+
+        print('This field is required.')
+
+
+def confirm_multistage_options(
+    stack: dict,
+    project_path: Path,
+) -> None:
+    recommendation = resolve_docker_recommendation(
+        stack=stack,
+        project_path=project_path,
+        strategy='multi',
+    )
+    supported_fields = {
+        'project_name',
+        'artifact_source',
+    }
+
+    for field in recommendation['requires_confirmation']:
+        if field not in supported_fields:
+            continue
+
+        prompt = f"Enter {field.replace('_', ' ')}"
+        stack[field] = ask_required_value(prompt)

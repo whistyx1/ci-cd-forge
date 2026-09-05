@@ -1,6 +1,11 @@
 from pathlib import Path
 
-from cli.display import display_errors, display_existing_paths, display_stacks
+from cli.display import (
+    display_created_paths,
+    display_errors,
+    display_existing_paths,
+    display_stacks,
+)
 from cli.paths import get_output_paths, resolve_project_path
 from cli.prompts import (
     ask_port,
@@ -8,6 +13,7 @@ from cli.prompts import (
     choose_strategies,
     choose_strategy,
     confirm,
+    confirm_multistage_options,
 )
 from detect.stack import create_stack
 from generators.compose.compose_service import generate_recommended_compose
@@ -21,7 +27,10 @@ def run_cli() -> int:
         print(f'Error: {project_path} is not a valid directory')
         return 1
 
-    stacks = create_stack(str(project_path))
+    stacks = sorted(
+        create_stack(str(project_path)),
+        key=lambda stack: stack['path'],
+    )
 
     if not stacks:
         print('No projects detected.')
@@ -81,7 +90,14 @@ def run_cli() -> int:
     try:
         if len(stacks) == 1:
             strategy = choose_strategy(stack['language(s)'])
-            generated_path = generate_recommended_dockerfile(
+
+            if strategy == 'multi':
+                confirm_multistage_options(
+                    stack=stack,
+                    project_path=detected_project_path,
+                )
+
+            generate_recommended_dockerfile(
                 stack=stack,
                 project_path=detected_project_path,
                 strategy=strategy,
@@ -89,14 +105,28 @@ def run_cli() -> int:
             )
         else:
             strategies = choose_strategies(stacks)
-            generated_path = generate_recommended_compose(
+
+            for project_stack in stacks:
+                if strategies[project_stack['path']] != 'multi':
+                    continue
+
+                stack_project_path = resolve_project_path(
+                    project_stack,
+                    project_path,
+                )
+                confirm_multistage_options(
+                    stack=project_stack,
+                    project_path=stack_project_path,
+                )
+
+            generate_recommended_compose(
                 root_path=project_path,
                 stacks=stacks,
                 strategies=strategies,
                 force=force,
             )
 
-        print(f'Created: {generated_path}')
+        display_created_paths(output_paths)
     except (ValueError, OSError) as error:
         print(f'Error: {error}')
         return 1
