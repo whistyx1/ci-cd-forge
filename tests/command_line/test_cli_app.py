@@ -5,7 +5,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from cli.app import choose_strategy, confirm, run_cli
+from cli.app import run_cli
+from cli.prompts import choose_strategy, confirm
 
 
 class TestCliApp(unittest.TestCase):

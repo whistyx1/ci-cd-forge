@@ -1,10 +1,11 @@
 from pathlib import Path
-from typing import Literal
 
+from cli.display import display_errors, display_existing_paths, display_stacks
+from cli.paths import get_output_paths, resolve_project_path
+from cli.prompts import choose_strategies, choose_strategy, confirm
 from detect.stack import create_stack
 from generators.compose.compose_service import generate_recommended_compose
 from generators.docker.service import generate_recommended_dockerfile
-from generators.docker.presets import DOCKER_PRESETS
 
 
 def run_cli() -> int:
@@ -20,17 +21,7 @@ def run_cli() -> int:
         print('No projects detected.')
         return 0
 
-    print('Detected projects:')
-
-    for stack in stacks:
-        framework_names = ', '.join(
-            framework['name']
-            for framework in stack['framework(s)']
-        )
-
-        print(f"- Path: {stack['path']}")
-        print(f"  Language: {stack['language(s)']}")
-        print(f"  Frameworks: {framework_names or 'None'}")
+    display_stacks(stacks)
 
     errors = [
         error
@@ -38,8 +29,7 @@ def run_cli() -> int:
         for error in stack.get('errors', [])
     ]
     if errors:
-        for error in errors:
-            print(f"Error in {error['file']}: {error['message']}")
+        display_errors(errors)
         return 1
 
     if not confirm('Generate container files?'):
@@ -47,8 +37,7 @@ def run_cli() -> int:
         return 0
 
     stack = stacks[0]
-    relative_path = Path(stack['path']).parts[1:]
-    detected_project_path = project_path.joinpath(*relative_path)
+    detected_project_path = resolve_project_path(stack, project_path)
 
     output_paths = get_output_paths(stacks, project_path)
     existing_paths = [
@@ -60,9 +49,7 @@ def run_cli() -> int:
     force = False
 
     if existing_paths:
-        print('Existing files:')
-        for existing_path in existing_paths:
-            print(f'- {existing_path}')
+        display_existing_paths(existing_paths)
 
         if not confirm('Overwrite existing files?', default=False):
             print('Overwrite cancelled.')
@@ -93,50 +80,3 @@ def run_cli() -> int:
         return 1
 
     return 0
-
-
-def confirm(prompt: str, default: bool = True) -> bool:
-    default_str = 'Y/n' if default else 'y/N'
-    while True:
-        response = input(f"{prompt} [{default_str}]: ").strip().lower()
-        if not response:
-            return default
-        if response in ('y', 'yes'):
-            return True
-        if response in ('n', 'no'):
-            return False
-        print("Please enter 'y' or 'n'.")
-
-
-def choose_strategy(language: str) -> Literal['single', 'multi']:
-    preset = DOCKER_PRESETS.get(language)
-    if preset is None or 'multistage' not in preset:
-        return 'single'
-    if confirm(f'Use multi-stage build for {language}?'):
-        return 'multi'
-    return 'single'
-
-
-def choose_strategies(
-    stacks: list[dict],
-) -> dict[str, Literal['single', 'multi']]:
-    return {
-        stack['path']: choose_strategy(stack['language(s)'])
-        for stack in stacks
-    }
-
-
-def get_output_paths(
-    stacks: list[dict],
-    root_path: Path,
-) -> list[Path]:
-    output_paths = []
-    for stack in stacks:
-        relative_path = Path(stack['path']).parts[1:]
-        project_path = root_path.joinpath(*relative_path)
-        output_paths.append(project_path / 'Dockerfile')
-
-    if len(stacks) > 1:
-        output_paths.append(root_path / 'compose.yaml')
-
-    return output_paths
