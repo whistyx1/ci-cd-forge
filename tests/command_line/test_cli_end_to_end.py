@@ -41,7 +41,7 @@ class TestCliEndToEnd(unittest.TestCase):
 
             completed_process = subprocess.run(
                 [sys.executable, str(main_path)],
-                input=f'{temp_dir}\n8000\n3000\ny\n',
+                input=f'{temp_dir}\nall\n8000\n3000\ny\n',
                 capture_output=True,
                 text=True,
                 timeout=10,
@@ -49,16 +49,23 @@ class TestCliEndToEnd(unittest.TestCase):
 
             backend_dockerfile = backend_path / 'Dockerfile'
             frontend_dockerfile = frontend_path / 'Dockerfile'
+            backend_dockerignore = backend_path / '.dockerignore'
+            frontend_dockerignore = frontend_path / '.dockerignore'
             compose_path = root_path / 'compose.yaml'
 
             self.assertEqual(completed_process.returncode, 0)
             self.assertEqual(completed_process.stderr, '')
             self.assertTrue(backend_dockerfile.is_file())
             self.assertTrue(frontend_dockerfile.is_file())
+            self.assertTrue(backend_dockerignore.is_file())
+            self.assertTrue(frontend_dockerignore.is_file())
             self.assertTrue(compose_path.is_file())
             self.assertIn(
                 f'Created files:\n- {backend_dockerfile}\n'
-                f'- {frontend_dockerfile}\n- {compose_path}',
+                f'- {backend_dockerignore}\n'
+                f'- {frontend_dockerfile}\n'
+                f'- {frontend_dockerignore}\n'
+                f'- {compose_path}',
                 completed_process.stdout,
             )
 

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from generators.docker.config_validator import validate_dockerfile_config
+from generators.docker.dockerignore_writer import write_dockerignore
 from generators.docker.dockerfile_renderer import generate_dockerfile
 from generators.docker.dockerfile_resolver import resolve_dockerfile_config
 from generators.docker.dockerfile_writer import write_dockerfile
@@ -37,6 +38,10 @@ def generate_project_dockerfile(
     dockerfile_path = write_dockerfile(
         project_path=project_path,
         dockerfile_text=dockerfile_text,
+        force=force,
+    )
+    write_dockerignore(
+        project_path=project_path,
         force=force,
     )
     return dockerfile_path
