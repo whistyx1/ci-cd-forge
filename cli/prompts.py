@@ -38,6 +38,39 @@ def choose_strategies(
     }
 
 
+def choose_projects(stacks: list[dict]) -> list[dict]:
+    if len(stacks) <= 1:
+        return stacks
+
+    while True:
+        response = input(
+            "Select projects by number (for example 1,2) or 'all': "
+        ).strip().lower()
+
+        if response == 'all':
+            return stacks
+
+        selected_indexes = {
+            int(value.strip())
+            for value in response.split(',')
+            if value.strip().isdigit()
+        }
+        values = [value.strip() for value in response.split(',')]
+        valid_selection = (
+            values
+            and all(value.isdigit() for value in values)
+            and all(1 <= index <= len(stacks) for index in selected_indexes)
+        )
+        if valid_selection:
+            return [
+                stack
+                for index, stack in enumerate(stacks, start=1)
+                if index in selected_indexes
+            ]
+
+        print("Select one or more project numbers, or enter 'all'.")
+
+
 def ask_start_command(stack: dict) -> str | None:
     print(f"Language: {stack['language(s)']}")
     print(f"Path: {stack['path']}")

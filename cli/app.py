@@ -10,6 +10,7 @@ from cli.paths import get_output_paths, resolve_project_path
 from cli.prompts import (
     ask_port,
     ask_start_command,
+    choose_projects,
     choose_strategies,
     choose_strategy,
     confirm,
@@ -37,6 +38,7 @@ def run_cli() -> int:
         return 0
 
     display_stacks(stacks)
+    stacks = choose_projects(stacks)
 
     errors = [
         error

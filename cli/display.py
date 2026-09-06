@@ -4,13 +4,13 @@ from pathlib import Path
 def display_stacks(stacks: list[dict]) -> None:
     print('Detected projects:')
 
-    for stack in stacks:
+    for index, stack in enumerate(stacks, start=1):
         framework_names = ', '.join(
             framework['name']
             for framework in stack['framework(s)']
         )
 
-        print(f"- Path: {stack['path']}")
+        print(f"{index}. Path: {stack['path']}")
         print(f"  Language: {stack['language(s)']}")
         print(f"  Frameworks: {framework_names or 'None'}")
 

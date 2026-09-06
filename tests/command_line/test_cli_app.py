@@ -11,6 +11,7 @@ from cli.prompts import (
     ask_port,
     ask_required_value,
     ask_start_command,
+    choose_projects,
     choose_strategy,
     confirm,
     confirm_multistage_options,
@@ -18,6 +19,49 @@ from cli.prompts import (
 
 
 class TestCliApp(unittest.TestCase):
+    def test_choose_projects_returns_single_project_without_prompt(self):
+        stacks = [{'path': 'root', 'language(s)': 'Python'}]
+
+        with patch('builtins.input') as input_mock:
+            result = choose_projects(stacks)
+
+        self.assertEqual(result, stacks)
+        input_mock.assert_not_called()
+
+    def test_choose_projects_returns_selected_projects_in_detected_order(self):
+        stacks = [
+            {'path': 'root', 'language(s)': 'Python'},
+            {'path': 'root/api', 'language(s)': 'Go'},
+            {'path': 'root/web', 'language(s)': 'JavaScript'},
+        ]
+
+        with patch('builtins.input', return_value=' 3, 1 '):
+            result = choose_projects(stacks)
+
+        self.assertEqual(result, [stacks[0], stacks[2]])
+
+    def test_choose_projects_repeats_after_invalid_selection(self):
+        stacks = [
+            {'path': 'root', 'language(s)': 'Python'},
+            {'path': 'root/api', 'language(s)': 'Go'},
+        ]
+        stdout = StringIO()
+
+        with patch(
+            'builtins.input',
+            side_effect=['', '3', 'one', '2'],
+        ):
+            with redirect_stdout(stdout):
+                result = choose_projects(stacks)
+
+        self.assertEqual(result, [stacks[1]])
+        self.assertEqual(
+            stdout.getvalue().count(
+                "Select one or more project numbers, or enter 'all'."
+            ),
+            3,
+        )
+
     def test_display_created_paths_shows_only_existing_files(self):
         with TemporaryDirectory() as temp_dir:
             stdout = StringIO()
@@ -310,7 +354,10 @@ class TestCliApp(unittest.TestCase):
         with TemporaryDirectory() as temp_dir:
             stdout = StringIO()
 
-            with patch('builtins.input', return_value=temp_dir):
+            with patch(
+                'builtins.input',
+                side_effect=[temp_dir, 'all'],
+            ):
                 with patch(
                     'cli.app.create_stack',
                     return_value=detected_stacks,
@@ -456,6 +503,7 @@ class TestCliApp(unittest.TestCase):
                 'builtins.input',
                 side_effect=[
                     temp_dir,
+                    'all',
                     'python app.py',
                     'npm start',
                     'no',
@@ -515,6 +563,66 @@ class TestCliApp(unittest.TestCase):
             )
             self.assertEqual(result, 0)
             self.assertIn('Created files:', stdout.getvalue())
+
+    def test_generates_only_selected_project_from_multiple_candidates(self):
+        detected_stacks = [
+            {
+                'path': 'root',
+                'language(s)': 'Python',
+                'framework(s)': [],
+                'errors': [],
+                'commands': {'start_command': 'python main.py'},
+                'port': None,
+            },
+            {
+                'path': 'root/tests/fixtures/go_app',
+                'language(s)': 'Go',
+                'framework(s)': [],
+                'errors': [],
+                'commands': {'start_command': './app'},
+                'port': None,
+            },
+            {
+                'path': 'root/tests/fixtures/python_app',
+                'language(s)': 'Python',
+                'framework(s)': [],
+                'errors': [],
+                'commands': {'start_command': 'python main.py'},
+                'port': None,
+            },
+        ]
+
+        with TemporaryDirectory() as temp_dir:
+            stdout = StringIO()
+            root_path = Path(temp_dir)
+            dockerfile_path = root_path / 'Dockerfile'
+
+            with patch(
+                'builtins.input',
+                side_effect=[temp_dir, '1', 'yes'],
+            ):
+                with patch(
+                    'cli.app.create_stack',
+                    return_value=detected_stacks,
+                ):
+                    with patch(
+                        'cli.app.generate_recommended_dockerfile',
+                        return_value=dockerfile_path,
+                    ) as generate_dockerfile_mock:
+                        with patch(
+                            'cli.app.generate_recommended_compose',
+                        ) as generate_compose_mock:
+                            with redirect_stdout(stdout):
+                                result = run_cli()
+
+        generate_dockerfile_mock.assert_called_once_with(
+            stack=detected_stacks[0],
+            project_path=root_path,
+            strategy='single',
+            force=False,
+        )
+        generate_compose_mock.assert_not_called()
+        self.assertEqual(result, 0)
 
     def test_generates_multistage_dockerfile_when_confirmed(self):
         detected_stack = {
@@ -666,7 +774,7 @@ class TestCliApp(unittest.TestCase):
 
             with patch(
                 'builtins.input',
-                side_effect=[temp_dir, 'y'],
+                side_effect=[temp_dir, 'all', 'y'],
             ):
                 with patch(
                     'cli.app.create_stack',
@@ -722,7 +830,7 @@ class TestCliApp(unittest.TestCase):
 
             with patch(
                 'builtins.input',
-                side_effect=[temp_dir, 'yes'],
+                side_effect=[temp_dir, 'all', 'yes'],
             ):
                 with patch(
                     'cli.app.create_stack',
@@ -786,7 +894,7 @@ class TestCliApp(unittest.TestCase):
 
             with patch(
                 'builtins.input',
-                side_effect=[temp_dir, 'yes', 'no'],
+                side_effect=[temp_dir, 'all', 'yes', 'no'],
             ):
                 with patch(
                     'cli.app.create_stack',
@@ -845,7 +953,7 @@ class TestCliApp(unittest.TestCase):
 
             with patch(
                 'builtins.input',
-                side_effect=[temp_dir, 'yes', 'yes'],
+                side_effect=[temp_dir, 'all', 'yes', 'yes'],
             ):
                 with patch(
                     'cli.app.create_stack',
