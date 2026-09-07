@@ -1,7 +1,9 @@
 import re
-from pathlib import Path
 
 from generators.compose.compose_config import ComposeConfig
+from validators.compose_dependencies import validate_compose_dependencies
+from validators.compose_environment import validate_compose_environment
+from validators.docker_path import validate_container_path
 
 
 SERVICE_NAME_PATTERN = re.compile(r'^[a-z0-9][a-z0-9_.-]*$')
@@ -49,12 +51,12 @@ def validate_compose(config: ComposeConfig) -> None:
                     f'use the same host port: {host_port}'
                 )
             used_host_ports[host_port] = service_name
-        _validate_environment(service_name, service_config.get('environment'))
-        _validate_dependencies(
+        validate_compose_environment(
+            environment=service_config.get('environment'),
             service_name=service_name,
-            depends_on=service_config.get('depends_on'),
-            available_services=set(services),
         )
+
+    validate_compose_dependencies(services)
 
 
 def _validate_service_name(service_name: object) -> None:
@@ -73,17 +75,16 @@ def _validate_relative_path(
 ) -> None:
     if value is None and not required:
         return
-    if not isinstance(value, str) or not value.strip():
-        raise ValueError(
-            f'Compose service {service_name} has an invalid {field} value'
+    try:
+        validate_container_path(
+            value=value,
+            field=field,
+            absolute=False,
         )
-
-    path = Path(value)
-    if path.is_absolute() or '..' in path.parts:
+    except ValueError as error:
         raise ValueError(
-            f'Compose service {service_name} has an invalid {field} path: '
-            f'{value}'
-        )
+            f'Compose service {service_name}: {error}'
+        ) from error
 
 
 def _validate_ports(service_name: str, ports: object) -> set[int]:
@@ -121,40 +122,3 @@ def _validate_ports(service_name: str, ports: object) -> set[int]:
         host_ports.add(host_port)
 
     return host_ports
-
-
-def _validate_environment(service_name: str, environment: object) -> None:
-    if environment is None:
-        return
-    if not isinstance(environment, dict) or any(
-        not isinstance(key, str)
-        or not key.strip()
-        or not isinstance(value, str)
-        for key, value in environment.items()
-    ):
-        raise ValueError(
-            f'Compose service {service_name} has an invalid environment value'
-        )
-
-
-def _validate_dependencies(
-    service_name: str,
-    depends_on: object,
-    available_services: set[str],
-) -> None:
-    if depends_on is None:
-        return
-    if not isinstance(depends_on, list) or any(
-        not isinstance(dependency, str) or not dependency
-        for dependency in depends_on
-    ):
-        raise ValueError(
-            f'Compose service {service_name} has an invalid depends_on value'
-        )
-
-    for dependency in depends_on:
-        if dependency == service_name or dependency not in available_services:
-            raise ValueError(
-                f'Compose service {service_name} has an unknown '
-                f'dependency: {dependency}'
-            )
