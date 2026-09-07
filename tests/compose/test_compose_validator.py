@@ -90,6 +90,35 @@ class TestComposeValidator(unittest.TestCase):
                         },
                     )
 
+    def test_rejects_duplicate_host_ports(self):
+        invalid_configs = (
+            {
+                'services': {
+                    'app': {
+                        'build_context': '.',
+                        'ports': ['8000:8000', '8000:8080'],
+                    },
+                },
+            },
+            {
+                'services': {
+                    'backend': {
+                        'build_context': './backend',
+                        'ports': ['8000:8000'],
+                    },
+                    'frontend': {
+                        'build_context': './frontend',
+                        'ports': ['8000:3000'],
+                    },
+                },
+            },
+        )
+
+        for config in invalid_configs:
+            with self.subTest(config=config):
+                with self.assertRaisesRegex(ValueError, 'host port'):
+                    validate_compose(config)
+
     def test_rejects_invalid_environment(self):
         invalid_environments = [[], {'': 'value'}, {'PORT': 8000}]
 

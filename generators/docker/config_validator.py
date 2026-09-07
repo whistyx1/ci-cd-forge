@@ -1,40 +1,41 @@
-from pathlib import PurePosixPath
-
 from generators.docker.config import DockerfileConfig
+from validators.docker_command import validate_docker_command
+from validators.docker_image import validate_docker_image
+from validators.docker_path import validate_container_path
+from validators.multistage import validate_multistage_config
 
 
 def validate_dockerfile_config(config: DockerfileConfig) -> None:
+    validate_multistage_config(config=config)
     base_image = config.get('base_image')
     strategy = config.get('strategy', 'single')
 
-    if strategy not in ('single', 'multi'):
-        raise ValueError(f'invalid strategy: {strategy}')
-
-    multi_stage_fields = {
-        'runtime_image': config.get('runtime_image'),
-        'artifact_source': config.get('artifact_source'),
-        'artifact_destination': config.get('artifact_destination')
-    }
+    validate_docker_image(base_image, field='base_image')
 
     if strategy == 'multi':
-        for field, value in multi_stage_fields.items():
-            if (
-                not isinstance(value, str)
-                or not value.strip()
-            ):
-                raise ValueError(f'{field}')
+        validate_docker_image(
+            config.get('runtime_image'),
+            field='runtime_image',
+        )
 
-    if not isinstance(base_image, str) or not base_image.strip():
-        raise ValueError('base_image must be a non-empty string')
+        validate_container_path(
+            config.get('artifact_source'),
+            field='artifact_source',
+            absolute=True,
+        )
+        validate_container_path(
+            config.get('artifact_destination'),
+            field='artifact_destination',
+            absolute=True,
+        )
 
     workdir = config.get('workdir')
 
-    if (
-        not isinstance(workdir, str)
-        or not workdir.strip()
-        or not workdir.startswith('/')
-    ):
-        raise ValueError('workdir must be a non-empty absolute path')
+    validate_container_path(
+        workdir,
+        field='workdir',
+        absolute=True,
+    )
 
     command_fields = (
         'install_command',
@@ -46,10 +47,8 @@ def validate_dockerfile_config(config: DockerfileConfig) -> None:
     for field in command_fields:
         value = config.get(field)
 
-        if value is not None and (
-            not isinstance(value, str) or not value.strip()
-        ):
-            raise ValueError(f'{field} must be a non-empty string or None')
+        if value is not None:
+            validate_docker_command(value, field=field)
 
     port = config.get('port')
     if port is not None:
@@ -66,13 +65,8 @@ def validate_dockerfile_config(config: DockerfileConfig) -> None:
             raise ValueError('dependency_files must be a list or None')
 
         for dependency_file in dependency_files:
-            if (
-                not isinstance(dependency_file, str)
-                or dependency_file.startswith('/')
-                or not dependency_file.strip()
-                or '..' in PurePosixPath(dependency_file).parts
-            ):
-                raise ValueError(
-                    'dependency_files must contain only safe relative '
-                    'non-empty paths'
-                )
+            validate_container_path(
+                dependency_file,
+                field='dependency_files',
+                absolute=False,
+            )
