@@ -46,6 +46,7 @@ class TestDockerImageValidation(unittest.TestCase):
             'workdir': '/app',
             'artifact_source': '/app/service',
             'artifact_destination': '/app/service',
+            'build_command': 'go build -o /app/service .',
         }
 
         with self.assertRaisesRegex(ValueError, 'runtime_image'):

@@ -2,28 +2,13 @@ from generators.docker.config import DockerfileConfig
 from validators.docker_command import validate_docker_command
 from validators.docker_image import validate_docker_image
 from validators.docker_path import validate_container_path
+from validators.multistage import validate_multistage_config
 
 
 def validate_dockerfile_config(config: DockerfileConfig) -> None:
+    validate_multistage_config(config=config)
     base_image = config.get('base_image')
     strategy = config.get('strategy', 'single')
-
-    if strategy not in ('single', 'multi'):
-        raise ValueError(f'invalid strategy: {strategy}')
-
-    multi_stage_fields = {
-        'runtime_image': config.get('runtime_image'),
-        'artifact_source': config.get('artifact_source'),
-        'artifact_destination': config.get('artifact_destination')
-    }
-
-    if strategy == 'multi':
-        for field, value in multi_stage_fields.items():
-            if (
-                not isinstance(value, str)
-                or not value.strip()
-            ):
-                raise ValueError(f'{field}')
 
     validate_docker_image(base_image, field='base_image')
 
