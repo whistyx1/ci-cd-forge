@@ -15,6 +15,8 @@ def validate_compose(config: ComposeConfig) -> None:
     if not isinstance(services, dict) or not services:
         raise ValueError('Compose services must be a non-empty dictionary')
 
+    used_host_ports: dict[int, str] = {}
+
     for service_name, service_config in services.items():
         _validate_service_name(service_name)
         if not isinstance(service_config, dict):
@@ -35,7 +37,18 @@ def validate_compose(config: ComposeConfig) -> None:
             service_name=service_name,
             required=False,
         )
-        _validate_ports(service_name, service_config.get('ports'))
+        host_ports = _validate_ports(
+            service_name,
+            service_config.get('ports'),
+        )
+        for host_port in host_ports:
+            owner = used_host_ports.get(host_port)
+            if owner is not None:
+                raise ValueError(
+                    f'Compose services {owner} and {service_name} '
+                    f'use the same host port: {host_port}'
+                )
+            used_host_ports[host_port] = service_name
         _validate_environment(service_name, service_config.get('environment'))
         _validate_dependencies(
             service_name=service_name,
@@ -73,14 +86,15 @@ def _validate_relative_path(
         )
 
 
-def _validate_ports(service_name: str, ports: object) -> None:
+def _validate_ports(service_name: str, ports: object) -> set[int]:
     if ports is None:
-        return
+        return set()
     if not isinstance(ports, list):
         raise ValueError(
             f'Compose service {service_name} has an invalid ports value'
         )
 
+    host_ports = set()
     for port_mapping in ports:
         if not isinstance(port_mapping, str):
             raise ValueError(
@@ -98,6 +112,15 @@ def _validate_ports(service_name: str, ports: object) -> None:
                 f'Compose service {service_name} has an invalid '
                 f'port mapping: {port_mapping}'
             )
+        host_port = int(parts[0])
+        if host_port in host_ports:
+            raise ValueError(
+                f'Compose service {service_name} contains duplicate '
+                f'host port: {host_port}'
+            )
+        host_ports.add(host_port)
+
+    return host_ports
 
 
 def _validate_environment(service_name: str, environment: object) -> None:
