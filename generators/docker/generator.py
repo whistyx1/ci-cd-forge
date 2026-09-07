@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from generators.file_transaction import FileTransaction
 from generators.docker.config_validator import validate_dockerfile_config
 from generators.docker.dockerignore_writer import write_dockerignore
 from generators.docker.dockerfile_renderer import generate_dockerfile
@@ -35,13 +36,26 @@ def generate_project_dockerfile(
     )
     validate_dockerfile_config(config=config)
     dockerfile_text = generate_dockerfile(config=config)
-    dockerfile_path = write_dockerfile(
-        project_path=project_path,
-        dockerfile_text=dockerfile_text,
-        force=force,
+    transaction = FileTransaction(
+        [
+            project_path / 'Dockerfile',
+            project_path / '.dockerignore',
+        ]
     )
-    write_dockerignore(
-        project_path=project_path,
-        force=force,
-    )
+    transaction.snapshot()
+
+    try:
+        dockerfile_path = write_dockerfile(
+            project_path=project_path,
+            dockerfile_text=dockerfile_text,
+            force=force,
+        )
+        write_dockerignore(
+            project_path=project_path,
+            force=force,
+        )
+    except Exception:
+        transaction.rollback()
+        raise
+
     return dockerfile_path
