@@ -8,6 +8,56 @@ from generators.compose.compose_service import generate_recommended_compose
 
 
 class TestComposeService(unittest.TestCase):
+    def test_rolls_back_all_generated_files_after_failure(self):
+        stacks = [
+            {'path': 'root/backend', 'language(s)': 'Python'},
+            {'path': 'root/frontend', 'language(s)': 'JavaScript'},
+        ]
+
+        with TemporaryDirectory() as temp_dir:
+            root_path = Path(temp_dir)
+            backend_path = root_path / 'backend'
+            frontend_path = root_path / 'frontend'
+            backend_path.mkdir()
+            frontend_path.mkdir()
+            backend_dockerfile = backend_path / 'Dockerfile'
+            backend_dockerfile.write_text(
+                'original Dockerfile\n',
+                encoding='utf-8',
+            )
+
+            def generate_dockerfile(*, project_path, **_options):
+                if project_path == frontend_path:
+                    raise OSError('generation failed')
+                (project_path / 'Dockerfile').write_text(
+                    'generated Dockerfile\n',
+                    encoding='utf-8',
+                )
+                (project_path / '.dockerignore').write_text(
+                    '.git\n',
+                    encoding='utf-8',
+                )
+
+            with patch(
+                'generators.compose.compose_service.'
+                'generate_recommended_dockerfile',
+                side_effect=generate_dockerfile,
+            ):
+                with self.assertRaisesRegex(OSError, 'generation failed'):
+                    generate_recommended_compose(
+                        root_path=root_path,
+                        stacks=stacks,
+                        force=True,
+                    )
+
+            self.assertEqual(
+                backend_dockerfile.read_text(encoding='utf-8'),
+                'original Dockerfile\n',
+            )
+            self.assertFalse((backend_path / '.dockerignore').exists())
+            self.assertFalse((frontend_path / 'Dockerfile').exists())
+            self.assertFalse((root_path / 'compose.yaml').exists())
+
     def test_uses_selected_strategy_for_each_project(self):
         stacks = [
             {
