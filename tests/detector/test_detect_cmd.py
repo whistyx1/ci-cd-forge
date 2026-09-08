@@ -611,6 +611,46 @@ class TestDetectCmd(unittest.TestCase):
                 }
             )
 
+    def test_uses_maven_commands_without_wrapper(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            pom_xml_path = project_path / 'pom.xml'
+            pom_xml_path.write_text(
+                '''
+                <project xmlns="http://maven.apache.org/POM/4.0.0">
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>com.example</groupId>
+                    <artifactId>api-service</artifactId>
+                    <version>1.0.0</version>
+                    <build>
+                        <finalName>api-service</finalName>
+                    </build>
+                </project>
+                '''.strip(),
+                encoding='utf-8',
+            )
+
+            result = detect_cmd(
+                lang='Java',
+                frameworks=[
+                    {
+                        'name': 'Spring',
+                        'source': 'pom.xml',
+                        'matched': 'spring-boot-starter-web',
+                    }
+                ],
+                files=list(project_path.iterdir()),
+            )
+
+            self.assertEqual(
+                result,
+                {
+                    'install_command': 'mvn dependency:go-offline',
+                    'build_command': 'mvn package',
+                    'start_command': 'java -jar target/api-service.jar',
+                },
+            )
+
     def test_detects_hibernate_commands(self):
         with TemporaryDirectory() as temp_dir:
             project_path = Path(temp_dir)

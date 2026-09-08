@@ -76,7 +76,6 @@ def _detect_javascript_commands(files, file_names):
         'start_command': commands['start'] if 'start' in scripts else None,
     }
 
-
 def _detect_python_commands(frameworks, file_names):
     # Python projects are installed from requirements and started by known files.
     install_command = None
@@ -224,8 +223,13 @@ def _detect_java_commands(frameworks, files, file_names):
     build_command = None
     start_command = None
     pom_path = None
-    if 'pom.xml' not in file_names or 'mvnw' not in file_names:
+    if 'pom.xml' not in file_names:
         return _empty_commands()
+
+    maven_command = './mvnw' if 'mvnw' in file_names else 'mvn'
+
+    install_command = f'{maven_command} dependency:go-offline'
+    build_command = f'{maven_command} package'
 
     for file in files:
         if file.name == 'pom.xml':
@@ -244,8 +248,6 @@ def _detect_java_commands(frameworks, files, file_names):
         'm:build/m:finalName',
         namespaces=namespace,
     )
-    install_command = './mvnw dependency:go-offline'
-    build_command = './mvnw package'
     is_spring = any(
         framework['name'] == 'Spring'
         for framework in frameworks
