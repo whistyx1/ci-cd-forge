@@ -155,8 +155,8 @@ class TestCreateStack(unittest.TestCase):
                             'start_command': None,
                         },
                     )
-                    self.assertEqual(
-                        result[0]['errors'],
+            self.assertEqual(
+                result[0]['errors'],
                         [
                             {
                                 'file': 'package.json',
@@ -184,6 +184,31 @@ class TestCreateStack(unittest.TestCase):
                     {
                         "file": "Backend.csproj",
                         "message": "Invalid manifest format",
+                    }
+                ],
+            )
+
+    def test_reports_invalid_composer_json_structure_without_stdout(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            manifest_path = project_path / 'composer.json'
+            manifest_path.write_text(
+                '{"require": []}',
+                encoding='utf-8',
+            )
+            stdout = StringIO()
+
+            with redirect_stdout(stdout):
+                result = create_stack(temp_dir)
+
+            self.assertEqual(len(result), 1)
+            self.assertEqual(stdout.getvalue(), '')
+            self.assertEqual(
+                result[0]['errors'],
+                [
+                    {
+                        'file': 'composer.json',
+                        'message': 'Invalid manifest format',
                     }
                 ],
             )

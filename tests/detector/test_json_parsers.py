@@ -65,3 +65,15 @@ class TestParseJson(unittest.TestCase):
                 {"name": "phpunit/phpunit", "version": "^10.0"},
             ],
         )
+
+    def test_rejects_invalid_composer_json_structure(self):
+        invalid_contents = (
+            '[]',
+            '{"require": []}',
+            '{"require-dev": null}',
+        )
+
+        for content in invalid_contents:
+            with self.subTest(content=content):
+                with self.assertRaisesRegex(ValueError, 'composer.json'):
+                    parse_composer_json(content)
