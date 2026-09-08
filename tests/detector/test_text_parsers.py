@@ -4,6 +4,7 @@ from parse.parse_requirements import parse_requirements
 from parse.parse_gemfile import parse_gemfile
 from parse.parse_go_mod import parse_go_mod
 
+
 class TestTextParsers(unittest.TestCase):
     def test_requirements_parser(self):
         content = """
@@ -42,6 +43,7 @@ class TestTextParsers(unittest.TestCase):
             go 1.24.0
 
             require (
+                // web framework
                 github.com/gin-gonic/gin v1.10.0
                 github.com/stretchr/testify v1.9.0
                 golang.org/x/crypto v0.21.0 // indirect

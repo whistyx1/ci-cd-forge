@@ -3,11 +3,101 @@ from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from detect.stack import create_stack
 
 
 class TestCreateStack(unittest.TestCase):
+    def test_rejects_missing_project_path(self):
+        with TemporaryDirectory() as temp_dir:
+            missing_path = Path(temp_dir) / 'missing-project'
+
+            with self.assertRaises(FileNotFoundError) as context:
+                create_stack(str(missing_path))
+
+            self.assertEqual(context.exception.args[0], missing_path)
+
+    def test_rejects_project_path_that_is_a_file(self):
+        with TemporaryDirectory() as temp_dir:
+            file_path = Path(temp_dir) / 'project.txt'
+            file_path.touch()
+
+            with self.assertRaises(NotADirectoryError) as context:
+                create_stack(str(file_path))
+
+            self.assertEqual(context.exception.args[0], file_path)
+
+    def test_reports_non_utf8_manifest_as_structured_error(self):
+        with TemporaryDirectory() as temp_dir:
+            manifest_path = Path(temp_dir) / 'requirements.txt'
+            manifest_path.write_bytes(b'\xff\xfe\x00')
+
+            result = create_stack(temp_dir)
+
+            self.assertEqual(
+                result[0]['errors'],
+                [
+                    {
+                        'file': 'requirements.txt',
+                        'message': 'Manifest file is not valid UTF-8',
+                    }
+                ],
+            )
+
+    def test_does_not_detect_commands_from_unreadable_manifest(self):
+        with TemporaryDirectory() as temp_dir:
+            manifest_path = Path(temp_dir) / 'package.json'
+            manifest_path.write_bytes(b'\xff\xfe\x00')
+
+            result = create_stack(temp_dir)
+
+            self.assertEqual(
+                result[0]['commands'],
+                {
+                    'install_command': None,
+                    'build_command': None,
+                    'start_command': None,
+                },
+            )
+            self.assertEqual(
+                result[0]['errors'],
+                [
+                    {
+                        'file': 'package.json',
+                        'message': 'Manifest file is not valid UTF-8',
+                    }
+                ],
+            )
+
+    def test_reports_manifest_read_errors(self):
+        cases = [
+            (
+                PermissionError('access denied'),
+                'Permission denied while reading manifest',
+            ),
+            (OSError('read failed'), 'Unable to read manifest file'),
+        ]
+
+        for error, expected_message in cases:
+            with self.subTest(error=type(error).__name__):
+                with TemporaryDirectory() as temp_dir:
+                    manifest_path = Path(temp_dir) / 'requirements.txt'
+                    manifest_path.touch()
+
+                    with patch.object(Path, 'read_text', side_effect=error):
+                        result = create_stack(temp_dir)
+
+                    self.assertEqual(
+                        result[0]['errors'],
+                        [
+                            {
+                                'file': 'requirements.txt',
+                                'message': expected_message,
+                            }
+                        ],
+                    )
+
     def test_reads_named_csproj_manifest(self):
         with TemporaryDirectory() as temp_dir:
             project_path = Path(temp_dir)
@@ -131,6 +221,33 @@ class TestCreateStack(unittest.TestCase):
                 ],
             )
 
+    def test_reports_invalid_package_json_structure_without_stdout(self):
+        invalid_contents = ('{"dependencies": []}', '[]')
+
+        for content in invalid_contents:
+            with self.subTest(content=content):
+                with TemporaryDirectory() as temp_dir:
+                    project_path = Path(temp_dir)
+                    manifest_path = project_path / 'package.json'
+                    manifest_path.write_text(content, encoding='utf-8')
+                    stdout = StringIO()
+
+                    with redirect_stdout(stdout):
+                        result = create_stack(temp_dir)
+
+                    self.assertEqual(len(result), 1)
+                    self.assertEqual(stdout.getvalue(), '')
+                    self.assertIsInstance(result[0]['commands'], dict)
+            self.assertEqual(
+                result[0]['errors'],
+                        [
+                            {
+                                'file': 'package.json',
+                                'message': 'Invalid manifest format',
+                            }
+                        ],
+                    )
+
     def test_reports_invalid_csproj_as_structured_error(self):
         with TemporaryDirectory() as temp_dir:
             project_path = Path(temp_dir)
@@ -150,6 +267,31 @@ class TestCreateStack(unittest.TestCase):
                     {
                         "file": "Backend.csproj",
                         "message": "Invalid manifest format",
+                    }
+                ],
+            )
+
+    def test_reports_invalid_composer_json_structure_without_stdout(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            manifest_path = project_path / 'composer.json'
+            manifest_path.write_text(
+                '{"require": []}',
+                encoding='utf-8',
+            )
+            stdout = StringIO()
+
+            with redirect_stdout(stdout):
+                result = create_stack(temp_dir)
+
+            self.assertEqual(len(result), 1)
+            self.assertEqual(stdout.getvalue(), '')
+            self.assertEqual(
+                result[0]['errors'],
+                [
+                    {
+                        'file': 'composer.json',
+                        'message': 'Invalid manifest format',
                     }
                 ],
             )
@@ -189,4 +331,29 @@ class TestCreateStack(unittest.TestCase):
                         }
                     ],
                 },
+            )
+
+    def test_reports_invalid_cargo_dependency_structure(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            manifest_file = project_path / 'Cargo.toml'
+            manifest_file.write_text(
+                'dependencies = []',
+                encoding='utf-8',
+            )
+            stdout = StringIO()
+
+            with redirect_stdout(stdout):
+                result = create_stack(temp_dir)
+
+            self.assertEqual(len(result), 1)
+            self.assertEqual(stdout.getvalue(), '')
+            self.assertEqual(
+                result[0]['errors'],
+                [
+                    {
+                        'file': 'Cargo.toml',
+                        'message': 'Invalid manifest format',
+                    }
+                ],
             )

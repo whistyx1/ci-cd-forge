@@ -26,3 +26,14 @@ class TestFindProject(unittest.TestCase):
             (project_path / "package.json").touch()
             result = find_projects(project_path)
             self.assertIn(project_path, result)
+
+    def test_finds_project_beyond_third_directory_level(self):
+        with TemporaryDirectory() as temp_dir:
+            root_path = Path(temp_dir)
+            project_path = root_path / 'one' / 'two' / 'three' / 'four'
+            project_path.mkdir(parents=True)
+            (project_path / 'package.json').touch()
+
+            result = find_projects(root_path)
+
+            self.assertIn(project_path, result)

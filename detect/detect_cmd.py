@@ -10,7 +10,6 @@ def _empty_commands():
         'start_command': None,
     }
 
-
 def _detect_javascript_commands(files, file_names):
     # JavaScript commands come from the package manager and declared scripts.
     package_path = None
@@ -25,6 +24,9 @@ def _detect_javascript_commands(files, file_names):
     try:
         package_data = json.loads(package_path.read_text(encoding='utf-8'))
     except json.JSONDecodeError:
+        return _empty_commands()
+
+    if not isinstance(package_data, dict):
         return _empty_commands()
 
     package_manager_commands = {
@@ -50,11 +52,23 @@ def _detect_javascript_commands(files, file_names):
         if lock_file in file_names:
             detected_managers.append(commands)
 
-    if len(detected_managers) != 1:
+    if len(detected_managers) > 1:
         return _empty_commands()
 
+    if detected_managers:
+        commands = detected_managers[0]
+    else:
+        commands = {
+            'install': 'npm install',
+            'build': 'npm run build',
+            'start': 'npm start',
+        }
+
     scripts = package_data.get('scripts', {})
-    commands = detected_managers[0]
+
+    if not isinstance(scripts, dict):
+        return _empty_commands()
+
     return {
         'install_command': commands['install'],
         'build_command': commands['build'] if 'build' in scripts else None,
@@ -140,9 +154,14 @@ def _detect_rust_commands(files, file_names):
             cargo_data = tomllib.load(file)
     except tomllib.TOMLDecodeError:
         return _empty_commands()
-    package_name = cargo_data.get('package', {}).get('name')
-    if not package_name:
+    package = cargo_data.get('package', {})
+    if not isinstance(package, dict):
         return _empty_commands()
+    package_name = package.get('name')
+    if not isinstance(package_name, str) or not package_name.strip():
+        return _empty_commands()
+
+    package_name = package_name.strip()
     return {
         'install_command': 'cargo fetch',
         'build_command': 'cargo build --release',
@@ -203,8 +222,13 @@ def _detect_java_commands(frameworks, files, file_names):
     build_command = None
     start_command = None
     pom_path = None
-    if 'pom.xml' not in file_names or 'mvnw' not in file_names:
+    if 'pom.xml' not in file_names:
         return _empty_commands()
+
+    maven_command = './mvnw' if 'mvnw' in file_names else 'mvn'
+
+    install_command = f'{maven_command} dependency:go-offline'
+    build_command = f'{maven_command} package'
 
     for file in files:
         if file.name == 'pom.xml':
@@ -223,8 +247,6 @@ def _detect_java_commands(frameworks, files, file_names):
         'm:build/m:finalName',
         namespaces=namespace,
     )
-    install_command = './mvnw dependency:go-offline'
-    build_command = './mvnw package'
     is_spring = any(
         framework['name'] == 'Spring'
         for framework in frameworks
@@ -310,7 +332,8 @@ def _detect_c_commands(files, file_names):
         'start_command': start_command,
     }
 
-def detect_cmd(lang, frameworks, files):
+
+def _detect_cmd(lang, frameworks, files):
     file_names = {file.name for file in files}
 
     if lang == 'JavaScript':
@@ -363,3 +386,10 @@ def detect_cmd(lang, frameworks, files):
         )
 
     return _empty_commands()
+
+
+def detect_cmd(lang, frameworks, files):
+    try:
+        return _detect_cmd(lang, frameworks, files)
+    except (OSError, UnicodeError):
+        return _empty_commands()

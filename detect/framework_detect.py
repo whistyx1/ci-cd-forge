@@ -1,5 +1,3 @@
-import json
-import tomllib
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -44,55 +42,76 @@ def detect_framework(
 
     if lang in manifest_files:
         try:
-            with open(path / manifest_name, "r") as f:
-                content = f.read()
-                parser_func = parsers.get(lang)
-                if parser_func:
-                    packages = parser_func(content)
-                    fram_dict = framework_markers.get(lang, {})
-                    for fw, markers in fram_dict.items():
-                        matched_value = None
-                        is_package_match = False
-                        for m in markers:
-                            for dependency in packages:
-                                package_name = dependency['name']
-                                if m == package_name or package_name.startswith(
-                                    f"{m}/"
-                                ):
-                                    matched_value = package_name
-                                    is_package_match = True
+            manifest_path = path / manifest_name
+            content = manifest_path.read_text(encoding='utf-8')
+            parser_func = parsers.get(lang)
+            if parser_func:
+                packages = parser_func(content)
+                fram_dict = framework_markers.get(lang, {})
+                for fw, markers in fram_dict.items():
+                    matched_value = None
+                    is_package_match = False
+                    for m in markers:
+                        for dependency in packages:
+                            package_name = dependency['name']
+                            if m == package_name or package_name.startswith(
+                                f"{m}/"
+                            ):
+                                matched_value = package_name
+                                is_package_match = True
+                                break
+                        if matched_value:
+                            break
+                    if not matched_value:
+                        for file in files:
+                            for m in markers:
+                                if m == file.name:
+                                    matched_value = file.name
                                     break
                             if matched_value:
                                 break
-                        if not matched_value:
-                            for file in files:
-                                for m in markers:
-                                    if m == file.name:
-                                        matched_value = file.name
-                                        break
-                                if matched_value:
-                                    break
-                        if matched_value:
-                            source = manifest_name if is_package_match else matched_value
-                            frameworks.append(
-                                {
-                                    'name': fw,
-                                    'source': source,
-                                    'matched': matched_value,
-                                }
-                            )
-        except (json.JSONDecodeError, ET.ParseError, tomllib.TOMLDecodeError):
+                    if matched_value:
+                        source = manifest_name if is_package_match else matched_value
+                        frameworks.append(
+                            {
+                                'name': fw,
+                                'source': source,
+                                'matched': matched_value,
+                            }
+                        )
+        except UnicodeDecodeError:
             errors.append(
                 {
-                    "file": manifest_name,
-                    "message": "Invalid manifest format",
+                    'file': manifest_name,
+                    'message': 'Manifest file is not valid UTF-8',
+                }
+            )
+        except (ValueError, ET.ParseError):
+            errors.append(
+                {
+                    'file': manifest_name,
+                    'message': 'Invalid manifest format',
                 }
             )
         except FileNotFoundError:
             errors.append(
                 {
-                    "file": manifest_name,
-                    "message": "Manifest file not found",
+                    'file': manifest_name,
+                    'message': 'Manifest file not found',
+                }
+            )
+        except PermissionError:
+            errors.append(
+                {
+                    'file': manifest_name,
+                    'message': 'Permission denied while reading manifest',
+                }
+            )
+        except OSError:
+            errors.append(
+                {
+                    'file': manifest_name,
+                    'message': 'Unable to read manifest file',
                 }
             )
 

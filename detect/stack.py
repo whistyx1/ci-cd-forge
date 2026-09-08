@@ -1,15 +1,17 @@
-from detect.language_detector import detect_language
-from detect.framework_detect import detect_framework
-from detect.project_finder import find_projects
-from detect.detect_cmd import detect_cmd
 from pathlib import Path
+
+from detect.detect_cmd import detect_cmd
+from detect.framework_detect import detect_framework
+from detect.language_detector import detect_language
+from detect.project_finder import find_projects
 
 
 def create_stack(path: str) -> list[dict]:
     path_obj = Path(path)
-    if not path_obj.exists() or not path_obj.is_dir():
-        print(f"The provided path '{path}' is not a valid directory.")
-        return
+    if not path_obj.exists():
+        raise FileNotFoundError(path_obj)
+    if not path_obj.is_dir():
+        raise NotADirectoryError(path_obj)
     stacks = []
     for project_path in find_projects(path):
         lang, matched_file = detect_language(str(project_path))
@@ -21,6 +23,13 @@ def create_stack(path: str) -> list[dict]:
         relative_path = project_path.relative_to(path)
         path_display = 'root' if relative_path == Path('.') else f'root/{relative_path}'
         files = list(project_path.iterdir())
+        commands = {
+            'install_command': None,
+            'build_command': None,
+            'start_command': None,
+        }
+        if not errors:
+            commands = detect_cmd(lang, framework, files)
         proj_dict = {
             'path': path_display,
             'language(s)': lang,
@@ -28,8 +37,8 @@ def create_stack(path: str) -> list[dict]:
             'language source file': matched_file,
             'dependencies': package,
             'manifest_file': matched_file,
-            'commands': detect_cmd(lang, framework, files),
+            'commands': commands,
             'errors': errors,
-            }
+        }
         stacks.append(proj_dict)
     return stacks

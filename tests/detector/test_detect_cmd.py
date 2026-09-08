@@ -2,6 +2,7 @@ import unittest
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from detect.detect_cmd import detect_cmd
 
@@ -139,6 +140,37 @@ class TestDetectCmd(unittest.TestCase):
                 }
             )
 
+    def test_uses_npm_commands_without_lock_file(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            package_path = project_path / 'package.json'
+            package_path.write_text(
+                json.dumps(
+                    {
+                        'scripts': {
+                            'build': 'vite build',
+                            'start': 'node server.js',
+                        }
+                    }
+                ),
+                encoding='utf-8',
+            )
+
+            result = detect_cmd(
+                lang='JavaScript',
+                frameworks=[],
+                files=list(project_path.iterdir()),
+            )
+
+            self.assertEqual(
+                result,
+                {
+                    'install_command': 'npm install',
+                    'build_command': 'npm run build',
+                    'start_command': 'npm start',
+                },
+            )
+
     def test_detects_yarn_and_pnpm_commands(self):
         cases = [
             (
@@ -183,6 +215,35 @@ class TestDetectCmd(unittest.TestCase):
                             'build_command': build_command,
                             'start_command': start_command,
                         }
+                    )
+
+    def test_ignores_invalid_package_scripts_structure(self):
+        invalid_scripts_values = (None, 123, [], 'npm start')
+
+        for scripts in invalid_scripts_values:
+            with self.subTest(scripts=scripts):
+                with TemporaryDirectory() as temp_dir:
+                    project_path = Path(temp_dir)
+                    package_path = project_path / 'package.json'
+                    package_path.write_text(
+                        json.dumps({'scripts': scripts}),
+                        encoding='utf-8',
+                    )
+                    (project_path / 'package-lock.json').touch()
+
+                    result = detect_cmd(
+                        lang='JavaScript',
+                        frameworks=[],
+                        files=list(project_path.iterdir()),
+                    )
+
+                    self.assertEqual(
+                        result,
+                        {
+                            'install_command': None,
+                            'build_command': None,
+                            'start_command': None,
+                        },
                     )
 
     def test_does_not_guess_package_manager_with_multiple_lock_files(self):
@@ -281,6 +342,53 @@ class TestDetectCmd(unittest.TestCase):
                 }
             )
 
+    def test_returns_empty_commands_for_non_utf8_source_file(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'go.mod').touch()
+            (project_path / 'main.go').write_bytes(b'\xff\xfe\x00')
+
+            result = detect_cmd(
+                lang='Go',
+                frameworks=[],
+                files=list(project_path.iterdir()),
+            )
+
+            self.assertEqual(
+                result,
+                {
+                    'install_command': None,
+                    'build_command': None,
+                    'start_command': None,
+                },
+            )
+
+    def test_returns_empty_commands_when_source_file_cannot_be_read(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'go.mod').touch()
+            (project_path / 'main.go').touch()
+
+            with patch.object(
+                Path,
+                'read_text',
+                side_effect=PermissionError('access denied'),
+            ):
+                result = detect_cmd(
+                    lang='Go',
+                    frameworks=[],
+                    files=list(project_path.iterdir()),
+                )
+
+            self.assertEqual(
+                result,
+                {
+                    'install_command': None,
+                    'build_command': None,
+                    'start_command': None,
+                },
+            )
+
     def test_detects_rust_application_commands(self):
         with TemporaryDirectory() as temp_dir:
             project_path = Path(temp_dir)
@@ -318,6 +426,36 @@ class TestDetectCmd(unittest.TestCase):
                     'build_command': 'cargo build --release',
                     'start_command': './target/release/api-service',
                 }
+            )
+
+    def test_ignores_invalid_cargo_package_structure(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            cargo_toml_path = project_path / 'Cargo.toml'
+            cargo_toml_path.write_text(
+                'package = []',
+                encoding='utf-8',
+            )
+            src_path = project_path / 'src'
+            src_path.mkdir()
+            (src_path / 'main.rs').write_text(
+                'fn main() {}',
+                encoding='utf-8',
+            )
+
+            result = detect_cmd(
+                lang='Rust',
+                frameworks=[],
+                files=list(project_path.iterdir()),
+            )
+
+            self.assertEqual(
+                result,
+                {
+                    'install_command': None,
+                    'build_command': None,
+                    'start_command': None,
+                },
             )
 
     def test_detects_sinatra_commands(self):
@@ -519,6 +657,46 @@ class TestDetectCmd(unittest.TestCase):
                     'build_command': './mvnw package',
                     'start_command': 'java -jar target/api-service.jar',
                 }
+            )
+
+    def test_uses_maven_commands_without_wrapper(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            pom_xml_path = project_path / 'pom.xml'
+            pom_xml_path.write_text(
+                '''
+                <project xmlns="http://maven.apache.org/POM/4.0.0">
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>com.example</groupId>
+                    <artifactId>api-service</artifactId>
+                    <version>1.0.0</version>
+                    <build>
+                        <finalName>api-service</finalName>
+                    </build>
+                </project>
+                '''.strip(),
+                encoding='utf-8',
+            )
+
+            result = detect_cmd(
+                lang='Java',
+                frameworks=[
+                    {
+                        'name': 'Spring',
+                        'source': 'pom.xml',
+                        'matched': 'spring-boot-starter-web',
+                    }
+                ],
+                files=list(project_path.iterdir()),
+            )
+
+            self.assertEqual(
+                result,
+                {
+                    'install_command': 'mvn dependency:go-offline',
+                    'build_command': 'mvn package',
+                    'start_command': 'java -jar target/api-service.jar',
+                },
             )
 
     def test_detects_hibernate_commands(self):
