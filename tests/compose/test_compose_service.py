@@ -8,6 +8,30 @@ from generators.compose.compose_service import generate_recommended_compose
 
 
 class TestComposeService(unittest.TestCase):
+    def test_rejects_overlapping_root_and_nested_projects(self):
+        stacks = [
+            {'path': 'root', 'language(s)': 'Python'},
+            {'path': 'root/frontend', 'language(s)': 'JavaScript'},
+        ]
+
+        with TemporaryDirectory() as temp_dir:
+            root_path = Path(temp_dir)
+            frontend_path = root_path / 'frontend'
+            frontend_path.mkdir()
+
+            with self.assertRaisesRegex(
+                ValueError,
+                'Compose project paths must not overlap',
+            ):
+                generate_recommended_compose(
+                    root_path=root_path,
+                    stacks=stacks,
+                )
+
+            self.assertFalse((root_path / 'Dockerfile').exists())
+            self.assertFalse((frontend_path / 'Dockerfile').exists())
+            self.assertFalse((root_path / 'compose.yaml').exists())
+
     def test_restores_dockerfile_name_case_after_later_project_fails(self):
         stacks = [
             {'path': 'root/backend', 'language(s)': 'Python'},

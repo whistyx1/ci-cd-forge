@@ -8,6 +8,21 @@ from generators.docker.dockerfile_writer import find_dockerfile_case_variants
 from generators.file_transaction import FileTransaction
 
 
+def _validate_non_overlapping_project_paths(project_paths: list[Path]) -> None:
+    for index, first_path in enumerate(project_paths):
+        for second_path in project_paths[index + 1:]:
+            paths_overlap = (
+                first_path == second_path
+                or first_path in second_path.parents
+                or second_path in first_path.parents
+            )
+            if paths_overlap:
+                raise ValueError(
+                    'Compose project paths must not overlap: '
+                    f'{first_path} and {second_path}'
+                )
+
+
 def generate_recommended_compose(
     root_path: Path,
     stacks: list[dict] | None = None,
@@ -26,6 +41,7 @@ def generate_recommended_compose(
         root_path.joinpath(*Path(stack['path']).parts[1:])
         for stack in project_stacks
     ]
+    _validate_non_overlapping_project_paths(project_paths)
     output_paths = [root_path / 'compose.yaml']
     for project_path in project_paths:
         output_paths.extend(
