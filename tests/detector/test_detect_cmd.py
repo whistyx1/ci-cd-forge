@@ -139,6 +139,37 @@ class TestDetectCmd(unittest.TestCase):
                 }
             )
 
+    def test_uses_npm_commands_without_lock_file(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            package_path = project_path / 'package.json'
+            package_path.write_text(
+                json.dumps(
+                    {
+                        'scripts': {
+                            'build': 'vite build',
+                            'start': 'node server.js',
+                        }
+                    }
+                ),
+                encoding='utf-8',
+            )
+
+            result = detect_cmd(
+                lang='JavaScript',
+                frameworks=[],
+                files=list(project_path.iterdir()),
+            )
+
+            self.assertEqual(
+                result,
+                {
+                    'install_command': 'npm install',
+                    'build_command': 'npm run build',
+                    'start_command': 'npm start',
+                },
+            )
+
     def test_detects_yarn_and_pnpm_commands(self):
         cases = [
             (

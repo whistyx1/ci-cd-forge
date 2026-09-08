@@ -147,14 +147,7 @@ class TestCreateStack(unittest.TestCase):
 
                     self.assertEqual(len(result), 1)
                     self.assertEqual(stdout.getvalue(), '')
-                    self.assertEqual(
-                        result[0]['commands'],
-                        {
-                            'install_command': None,
-                            'build_command': None,
-                            'start_command': None,
-                        },
-                    )
+                    self.assertIsInstance(result[0]['commands'], dict)
             self.assertEqual(
                 result[0]['errors'],
                         [

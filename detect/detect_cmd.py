@@ -53,20 +53,29 @@ def _detect_javascript_commands(files, file_names):
         if lock_file in file_names:
             detected_managers.append(commands)
 
-    if len(detected_managers) != 1:
+    if len(detected_managers) > 1:
         return _empty_commands()
+
+    if detected_managers:
+        commands = detected_managers[0]
+    else:
+        commands = {
+            'install': 'npm install',
+            'build': 'npm run build',
+            'start': 'npm start',
+        }
 
     scripts = package_data.get('scripts', {})
 
     if not isinstance(scripts, dict):
         return _empty_commands()
 
-    commands = detected_managers[0]
     return {
         'install_command': commands['install'],
         'build_command': commands['build'] if 'build' in scripts else None,
         'start_command': commands['start'] if 'start' in scripts else None,
     }
+
 
 def _detect_python_commands(frameworks, file_names):
     # Python projects are installed from requirements and started by known files.
