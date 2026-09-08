@@ -6,6 +6,8 @@ def parse_go_mod(content: str) -> list[Dependency]:
     inside_require_block = False
     for line in content.splitlines():
         line = line.strip()
+        if not line or line.startswith('//'):
+            continue
         if line.startswith('require ('):
             inside_require_block = True
             continue
@@ -35,4 +37,4 @@ def parse_go_mod(content: str) -> list[Dependency]:
                         'version': version,
                     }
                 )
-    return go_mod_packages 
+    return go_mod_packages
