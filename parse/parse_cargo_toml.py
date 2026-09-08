@@ -7,7 +7,11 @@ def parse_cargo_toml(content: str) -> list[Dependency]:
     data = tomllib.loads(content)
     cargo_packages = []
     for section_name in ("dependencies", "dev-dependencies"):
-        for name, config in data.get(section_name, {}).items():
+        section = data.get(section_name, {})
+
+        if not isinstance(section, dict):
+            raise ValueError(f'Cargo.toml {section_name} must be a dictionary.')
+        for name, config in section.items():
             if isinstance(config, str):
                 version = config
             elif isinstance(config, dict):

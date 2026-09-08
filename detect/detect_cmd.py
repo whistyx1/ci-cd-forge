@@ -147,9 +147,14 @@ def _detect_rust_commands(files, file_names):
             cargo_data = tomllib.load(file)
     except tomllib.TOMLDecodeError:
         return _empty_commands()
-    package_name = cargo_data.get('package', {}).get('name')
-    if not package_name:
+    package = cargo_data.get('package', {})
+    if not isinstance(package, dict):
         return _empty_commands()
+    package_name = package.get('name')
+    if not isinstance(package_name, str) or not package_name.strip():
+        return _empty_commands()
+
+    package_name = package_name.strip()
     return {
         'install_command': 'cargo fetch',
         'build_command': 'cargo build --release',

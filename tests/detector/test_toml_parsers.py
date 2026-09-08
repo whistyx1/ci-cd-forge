@@ -30,3 +30,14 @@ class TestTomlParser(unittest.TestCase):
                 {"name": "locallib", "version": None},
             ],
         )
+
+    def test_rejects_invalid_dependency_section_structure(self):
+        invalid_contents = (
+            'dependencies = []',
+            'dev-dependencies = []',
+        )
+
+        for content in invalid_contents:
+            with self.subTest(content=content):
+                with self.assertRaisesRegex(ValueError, 'Cargo.toml'):
+                    parse_cargo_toml(content)

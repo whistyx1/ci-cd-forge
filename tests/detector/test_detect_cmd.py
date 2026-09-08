@@ -349,6 +349,36 @@ class TestDetectCmd(unittest.TestCase):
                 }
             )
 
+    def test_ignores_invalid_cargo_package_structure(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            cargo_toml_path = project_path / 'Cargo.toml'
+            cargo_toml_path.write_text(
+                'package = []',
+                encoding='utf-8',
+            )
+            src_path = project_path / 'src'
+            src_path.mkdir()
+            (src_path / 'main.rs').write_text(
+                'fn main() {}',
+                encoding='utf-8',
+            )
+
+            result = detect_cmd(
+                lang='Rust',
+                frameworks=[],
+                files=list(project_path.iterdir()),
+            )
+
+            self.assertEqual(
+                result,
+                {
+                    'install_command': None,
+                    'build_command': None,
+                    'start_command': None,
+                },
+            )
+
     def test_detects_sinatra_commands(self):
         with TemporaryDirectory() as temp_dir:
             project_path = Path(temp_dir)
