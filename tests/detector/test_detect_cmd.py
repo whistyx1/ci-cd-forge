@@ -185,6 +185,35 @@ class TestDetectCmd(unittest.TestCase):
                         }
                     )
 
+    def test_ignores_invalid_package_scripts_structure(self):
+        invalid_scripts_values = (None, 123, [], 'npm start')
+
+        for scripts in invalid_scripts_values:
+            with self.subTest(scripts=scripts):
+                with TemporaryDirectory() as temp_dir:
+                    project_path = Path(temp_dir)
+                    package_path = project_path / 'package.json'
+                    package_path.write_text(
+                        json.dumps({'scripts': scripts}),
+                        encoding='utf-8',
+                    )
+                    (project_path / 'package-lock.json').touch()
+
+                    result = detect_cmd(
+                        lang='JavaScript',
+                        frameworks=[],
+                        files=list(project_path.iterdir()),
+                    )
+
+                    self.assertEqual(
+                        result,
+                        {
+                            'install_command': None,
+                            'build_command': None,
+                            'start_command': None,
+                        },
+                    )
+
     def test_does_not_guess_package_manager_with_multiple_lock_files(self):
         with TemporaryDirectory() as temp_dir:
             project_path = Path(temp_dir)

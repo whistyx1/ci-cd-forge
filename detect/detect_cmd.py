@@ -57,6 +57,10 @@ def _detect_javascript_commands(files, file_names):
         return _empty_commands()
 
     scripts = package_data.get('scripts', {})
+
+    if not isinstance(scripts, dict):
+        return _empty_commands()
+
     commands = detected_managers[0]
     return {
         'install_command': commands['install'],
