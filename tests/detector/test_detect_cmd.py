@@ -2,6 +2,7 @@ import unittest
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from detect.detect_cmd import detect_cmd
 
@@ -339,6 +340,53 @@ class TestDetectCmd(unittest.TestCase):
                     'build_command': None,
                     'start_command': None,
                 }
+            )
+
+    def test_returns_empty_commands_for_non_utf8_source_file(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'go.mod').touch()
+            (project_path / 'main.go').write_bytes(b'\xff\xfe\x00')
+
+            result = detect_cmd(
+                lang='Go',
+                frameworks=[],
+                files=list(project_path.iterdir()),
+            )
+
+            self.assertEqual(
+                result,
+                {
+                    'install_command': None,
+                    'build_command': None,
+                    'start_command': None,
+                },
+            )
+
+    def test_returns_empty_commands_when_source_file_cannot_be_read(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'go.mod').touch()
+            (project_path / 'main.go').touch()
+
+            with patch.object(
+                Path,
+                'read_text',
+                side_effect=PermissionError('access denied'),
+            ):
+                result = detect_cmd(
+                    lang='Go',
+                    frameworks=[],
+                    files=list(project_path.iterdir()),
+                )
+
+            self.assertEqual(
+                result,
+                {
+                    'install_command': None,
+                    'build_command': None,
+                    'start_command': None,
+                },
             )
 
     def test_detects_rust_application_commands(self):

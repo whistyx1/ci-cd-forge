@@ -1,8 +1,9 @@
-from detect.language_detector import detect_language
-from detect.framework_detect import detect_framework
-from detect.project_finder import find_projects
-from detect.detect_cmd import detect_cmd
 from pathlib import Path
+
+from detect.detect_cmd import detect_cmd
+from detect.framework_detect import detect_framework
+from detect.language_detector import detect_language
+from detect.project_finder import find_projects
 
 
 def create_stack(path: str) -> list[dict]:
@@ -21,6 +22,13 @@ def create_stack(path: str) -> list[dict]:
         relative_path = project_path.relative_to(path)
         path_display = 'root' if relative_path == Path('.') else f'root/{relative_path}'
         files = list(project_path.iterdir())
+        commands = {
+            'install_command': None,
+            'build_command': None,
+            'start_command': None,
+        }
+        if not errors:
+            commands = detect_cmd(lang, framework, files)
         proj_dict = {
             'path': path_display,
             'language(s)': lang,
@@ -28,8 +36,8 @@ def create_stack(path: str) -> list[dict]:
             'language source file': matched_file,
             'dependencies': package,
             'manifest_file': matched_file,
-            'commands': detect_cmd(lang, framework, files),
+            'commands': commands,
             'errors': errors,
-            }
+        }
         stacks.append(proj_dict)
     return stacks

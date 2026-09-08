@@ -10,7 +10,6 @@ def _empty_commands():
         'start_command': None,
     }
 
-
 def _detect_javascript_commands(files, file_names):
     # JavaScript commands come from the package manager and declared scripts.
     package_path = None
@@ -333,7 +332,8 @@ def _detect_c_commands(files, file_names):
         'start_command': start_command,
     }
 
-def detect_cmd(lang, frameworks, files):
+
+def _detect_cmd(lang, frameworks, files):
     file_names = {file.name for file in files}
 
     if lang == 'JavaScript':
@@ -386,3 +386,10 @@ def detect_cmd(lang, frameworks, files):
         )
 
     return _empty_commands()
+
+
+def detect_cmd(lang, frameworks, files):
+    try:
+        return _detect_cmd(lang, frameworks, files)
+    except (OSError, UnicodeError):
+        return _empty_commands()
