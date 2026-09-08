@@ -8,6 +8,56 @@ from generators.compose.compose_service import generate_recommended_compose
 
 
 class TestComposeService(unittest.TestCase):
+    def test_restores_dockerfile_name_case_after_later_project_fails(self):
+        stacks = [
+            {'path': 'root/backend', 'language(s)': 'Python'},
+            {'path': 'root/frontend', 'language(s)': 'JavaScript'},
+        ]
+
+        with TemporaryDirectory() as temp_dir:
+            root_path = Path(temp_dir)
+            backend_path = root_path / 'backend'
+            frontend_path = root_path / 'frontend'
+            backend_path.mkdir()
+            frontend_path.mkdir()
+            original_path = backend_path / 'DockerFile'
+            original_text = 'FROM python:3-slim\n'
+            original_path.write_text(original_text, encoding='utf-8')
+
+            def generate_dockerfile(*, project_path, **_options):
+                if project_path == frontend_path:
+                    raise OSError('generation failed')
+
+                temporary_path = project_path / '.Dockerfile.rename-tmp'
+                original_path.rename(temporary_path)
+                dockerfile_path = project_path / 'Dockerfile'
+                temporary_path.rename(dockerfile_path)
+                dockerfile_path.write_text(
+                    'FROM python:3.12-slim\n',
+                    encoding='utf-8',
+                )
+
+            with patch(
+                'generators.compose.compose_service.'
+                'generate_recommended_dockerfile',
+                side_effect=generate_dockerfile,
+            ):
+                with self.assertRaisesRegex(OSError, 'generation failed'):
+                    generate_recommended_compose(
+                        root_path=root_path,
+                        stacks=stacks,
+                        force=True,
+                    )
+
+            self.assertEqual(
+                {path.name for path in backend_path.iterdir()},
+                {'DockerFile'},
+            )
+            self.assertEqual(
+                original_path.read_text(encoding='utf-8'),
+                original_text,
+            )
+
     def test_rolls_back_all_generated_files_after_failure(self):
         stacks = [
             {'path': 'root/backend', 'language(s)': 'Python'},
@@ -73,6 +123,8 @@ class TestComposeService(unittest.TestCase):
         with TemporaryDirectory() as temp_dir:
             root_path = Path(temp_dir)
             compose_path = root_path / 'compose.yaml'
+            (root_path / 'backend').mkdir()
+            (root_path / 'frontend').mkdir()
 
             with patch(
                 'generators.compose.compose_service.create_stack',

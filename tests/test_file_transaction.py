@@ -47,6 +47,21 @@ class TestFileTransaction(unittest.TestCase):
 
             self.assertFalse(file_path.exists())
 
+    def test_rollback_preserves_file_with_different_case(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            requested_path = project_path / 'Dockerfile'
+            existing_path = project_path / 'dockerfile'
+            existing_path.write_bytes(b'original Dockerfile\n')
+            transaction = FileTransaction([requested_path])
+
+            transaction.snapshot()
+            transaction.rollback()
+
+            self.assertIsNone(transaction.original_files[requested_path])
+            self.assertIn('dockerfile', {path.name for path in project_path.iterdir()})
+            self.assertEqual(existing_path.read_bytes(), b'original Dockerfile\n')
+
     def test_snapshot_rejects_directory_path(self):
         with TemporaryDirectory() as temp_dir:
             directory_path = Path(temp_dir) / 'Dockerfile'

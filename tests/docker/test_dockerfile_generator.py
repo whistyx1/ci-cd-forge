@@ -44,6 +44,45 @@ class TestDockerfileGenerator(unittest.TestCase):
                 'FROM python:3.11-slim\n',
             )
 
+    def test_restores_dockerfile_name_case_when_generation_fails(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            original_path = project_path / 'DockerFile'
+            original_text = 'FROM python:3-slim\n'
+            original_path.write_text(original_text, encoding='utf-8')
+            stack = {
+                'language(s)': 'Python',
+                'manifest_file': None,
+                'commands': {
+                    'install_command': None,
+                    'build_command': None,
+                    'start_command': 'python main.py',
+                },
+            }
+
+            with patch(
+                'generators.docker.generator.write_dockerignore',
+                side_effect=OSError('write failed'),
+            ):
+                with self.assertRaisesRegex(OSError, 'write failed'):
+                    generate_project_dockerfile(
+                        stack=stack,
+                        project_path=project_path,
+                        base_image='python:3.12-slim',
+                        workdir='/app',
+                        port=None,
+                        force=True,
+                    )
+
+            self.assertEqual(
+                {path.name for path in project_path.iterdir()},
+                {'DockerFile'},
+            )
+            self.assertEqual(
+                original_path.read_text(encoding='utf-8'),
+                original_text,
+            )
+
     def test_generates_python_project_dockerfile(self):
         with TemporaryDirectory() as temp_dir:
             project_path = Path(temp_dir)

@@ -4,6 +4,7 @@ from typing import Literal
 from detect.stack import create_stack
 from generators.compose.compose_generator import generate_project_compose
 from generators.docker.service import generate_recommended_dockerfile
+from generators.docker.dockerfile_writer import find_dockerfile_case_variants
 from generators.file_transaction import FileTransaction
 
 
@@ -30,6 +31,7 @@ def generate_recommended_compose(
         output_paths.extend(
             [
                 project_path / 'Dockerfile',
+                *find_dockerfile_case_variants(project_path),
                 project_path / '.dockerignore',
             ]
         )

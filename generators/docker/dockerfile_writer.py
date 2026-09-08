@@ -1,6 +1,15 @@
 from pathlib import Path
 
 
+def find_dockerfile_case_variants(project_path: Path) -> list[Path]:
+    return [
+        path
+        for path in project_path.iterdir()
+        if path.name.lower() == 'dockerfile'
+        and path.name != 'Dockerfile'
+    ]
+
+
 def write_dockerfile(
     project_path: Path,
     dockerfile_text: str,
@@ -10,12 +19,7 @@ def write_dockerfile(
     if not isinstance(dockerfile_text, str) or not dockerfile_text.strip():
         raise ValueError('dockerfile_text must be a non-empty string')
 
-    case_variants = [
-        path
-        for path in project_path.iterdir()
-        if path.name.lower() == 'dockerfile'
-        and path.name != 'Dockerfile'
-    ]
+    case_variants = find_dockerfile_case_variants(project_path)
     if case_variants:
         if not force:
             raise FileExistsError(case_variants[0])
