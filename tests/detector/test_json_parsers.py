@@ -31,6 +31,18 @@ class TestParseJson(unittest.TestCase):
             ],
         )
 
+    def test_rejects_invalid_package_json_structure(self):
+        invalid_contents = (
+            '[]',
+            '{"dependencies": []}',
+            '{"devDependencies": null}',
+        )
+
+        for content in invalid_contents:
+            with self.subTest(content=content):
+                with self.assertRaisesRegex(ValueError, 'package.json'):
+                    parse_package_json(content)
+
     def test_parse_composer_json(self):
         content = {
             "name": "your-username/my-awesome-app",

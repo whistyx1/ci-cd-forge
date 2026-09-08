@@ -1,5 +1,3 @@
-import json
-import tomllib
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -81,7 +79,7 @@ def detect_framework(
                                     'matched': matched_value,
                                 }
                             )
-        except (json.JSONDecodeError, ET.ParseError, tomllib.TOMLDecodeError):
+        except (ValueError, ET.ParseError):
             errors.append(
                 {
                     "file": manifest_name,

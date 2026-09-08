@@ -27,6 +27,9 @@ def _detect_javascript_commands(files, file_names):
     except json.JSONDecodeError:
         return _empty_commands()
 
+    if not isinstance(package_data, dict):
+        return _empty_commands()
+
     package_manager_commands = {
         'package-lock.json': {
             'install': 'npm ci',
