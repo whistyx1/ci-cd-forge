@@ -9,6 +9,25 @@ from detect.stack import create_stack
 
 
 class TestCreateStack(unittest.TestCase):
+    def test_rejects_missing_project_path(self):
+        with TemporaryDirectory() as temp_dir:
+            missing_path = Path(temp_dir) / 'missing-project'
+
+            with self.assertRaises(FileNotFoundError) as context:
+                create_stack(str(missing_path))
+
+            self.assertEqual(context.exception.args[0], missing_path)
+
+    def test_rejects_project_path_that_is_a_file(self):
+        with TemporaryDirectory() as temp_dir:
+            file_path = Path(temp_dir) / 'project.txt'
+            file_path.touch()
+
+            with self.assertRaises(NotADirectoryError) as context:
+                create_stack(str(file_path))
+
+            self.assertEqual(context.exception.args[0], file_path)
+
     def test_reports_non_utf8_manifest_as_structured_error(self):
         with TemporaryDirectory() as temp_dir:
             manifest_path = Path(temp_dir) / 'requirements.txt'

@@ -8,9 +8,10 @@ from detect.project_finder import find_projects
 
 def create_stack(path: str) -> list[dict]:
     path_obj = Path(path)
-    if not path_obj.exists() or not path_obj.is_dir():
-        print(f"The provided path '{path}' is not a valid directory.")
-        return
+    if not path_obj.exists():
+        raise FileNotFoundError(path_obj)
+    if not path_obj.is_dir():
+        raise NotADirectoryError(path_obj)
     stacks = []
     for project_path in find_projects(path):
         lang, matched_file = detect_language(str(project_path))
