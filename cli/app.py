@@ -26,6 +26,7 @@ from generators.docker.recommendation_resolver import (
     resolve_docker_recommendation,
 )
 from generators.docker.service import generate_recommended_dockerfile
+from validators.docker_image import docker_image_exists
 
 
 def _review_project_docker_options(
@@ -51,6 +52,35 @@ def _review_project_docker_options(
 
     stack['commands'] = commands
     return reviewed_options
+
+
+def _verify_docker_option_images(
+    options: DockerGeneratorOptions,
+) -> None:
+    fields = ('base_image', 'runtime_image')
+
+    for field in fields:
+        image = options.get(field)
+        if image is None:
+            continue
+
+        if not docker_image_exists(image):
+            raise ValueError(
+                f'Docker image is not available: {image}'
+            )
+
+
+def _verify_docker_images_if_requested(
+    project_options: list[DockerGeneratorOptions],
+) -> None:
+    if not confirm(
+        'Verify Docker images online before generation?',
+        default=False,
+    ):
+        return
+
+    for options in project_options:
+        _verify_docker_option_images(options)
 
 
 def run_cli() -> int:
@@ -136,6 +166,8 @@ def run_cli() -> int:
                 strategy=strategy,
             )
 
+            _verify_docker_images_if_requested([docker_options])
+
             generate_recommended_dockerfile(
                 stack=stack,
                 project_path=detected_project_path,
@@ -169,6 +201,10 @@ def run_cli() -> int:
                     )
                 )
 
+            _verify_docker_images_if_requested(
+                list(project_docker_options.values())
+            )
+
             generate_recommended_compose(
                 root_path=project_path,
                 stacks=stacks,
@@ -178,7 +214,7 @@ def run_cli() -> int:
             )
 
         display_created_paths(output_paths)
-    except (ValueError, OSError) as error:
+    except (ValueError, OSError, RuntimeError) as error:
         print(f'Error: {error}')
         return 1
 
