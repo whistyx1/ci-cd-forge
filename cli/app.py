@@ -1,7 +1,9 @@
 from pathlib import Path
+from typing import Literal
 
 from cli.display import (
     display_created_paths,
+    display_docker_options,
     display_errors,
     display_existing_paths,
     display_stacks,
@@ -15,10 +17,30 @@ from cli.prompts import (
     choose_strategy,
     confirm,
     confirm_multistage_options,
+    review_docker_options,
 )
 from detect.stack import create_stack
 from generators.compose.compose_service import generate_recommended_compose
+from generators.docker.recommendation_resolver import (
+    DockerGeneratorOptions,
+    resolve_docker_recommendation,
+)
 from generators.docker.service import generate_recommended_dockerfile
+
+
+def _review_project_docker_options(
+    stack: dict,
+    project_path: Path,
+    strategy: Literal['single', 'multi'],
+) -> DockerGeneratorOptions:
+    recommended_docker = resolve_docker_recommendation(
+        stack=stack,
+        project_path=project_path,
+        strategy=strategy,
+    )
+    options = recommended_docker['options']
+    display_docker_options(stack['path'], options)
+    return review_docker_options(options)
 
 
 def run_cli() -> int:
@@ -98,11 +120,16 @@ def run_cli() -> int:
                     stack=stack,
                     project_path=detected_project_path,
                 )
+            docker_options = _review_project_docker_options(
+                stack=stack,
+                project_path=detected_project_path,
+                strategy=strategy,
+            )
 
             generate_recommended_dockerfile(
                 stack=stack,
                 project_path=detected_project_path,
-                strategy=strategy,
+                docker_options=docker_options,
                 force=force,
             )
         else:

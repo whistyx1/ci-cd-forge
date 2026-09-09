@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from cli.app import run_cli
+from cli.app import _review_project_docker_options, run_cli
 from cli.display import display_created_paths
 from cli.prompts import (
     ask_port,
@@ -19,6 +19,73 @@ from cli.prompts import (
 
 
 class TestCliApp(unittest.TestCase):
+    def setUp(self):
+        self.docker_options_patcher = patch(
+            'cli.app._review_project_docker_options',
+            side_effect=self._docker_options,
+        )
+        self.review_docker_options_mock = (
+            self.docker_options_patcher.start()
+        )
+        self.addCleanup(self.docker_options_patcher.stop)
+
+    @staticmethod
+    def _docker_options(stack, project_path, strategy):
+        return {
+            'base_image': f"{stack['language(s)'].lower()}:test",
+            'workdir': '/app',
+            'port': stack.get('port'),
+            'strategy': strategy,
+        }
+
+    def test_reviews_recommended_docker_options(self):
+        stack = {
+            'path': 'root/backend',
+            'language(s)': 'Python',
+            'port': 8000,
+        }
+        project_path = Path('/project/backend')
+        recommended_options = {
+            'base_image': 'python:3.12-slim',
+            'workdir': '/app',
+            'port': 8000,
+            'strategy': 'single',
+        }
+        reviewed_options = {
+            **recommended_options,
+            'base_image': 'python:3.13-slim',
+        }
+
+        with patch(
+            'cli.app.resolve_docker_recommendation',
+            return_value={
+                'options': recommended_options,
+                'requires_confirmation': [],
+            },
+        ) as recommendation_mock:
+            with patch('cli.app.display_docker_options') as display_mock:
+                with patch(
+                    'cli.app.review_docker_options',
+                    return_value=reviewed_options,
+                ) as review_mock:
+                    result = _review_project_docker_options(
+                        stack=stack,
+                        project_path=project_path,
+                        strategy='single',
+                    )
+
+        recommendation_mock.assert_called_once_with(
+            stack=stack,
+            project_path=project_path,
+            strategy='single',
+        )
+        display_mock.assert_called_once_with(
+            'root/backend',
+            recommended_options,
+        )
+        review_mock.assert_called_once_with(recommended_options)
+        self.assertEqual(result, reviewed_options)
+
     def test_choose_projects_returns_single_project_without_prompt(self):
         stacks = [{'path': 'root', 'language(s)': 'Python'}]
 
@@ -474,7 +541,11 @@ class TestCliApp(unittest.TestCase):
         generate_dockerfile_mock.assert_called_once_with(
             stack=detected_stack,
             project_path=Path(temp_dir) / 'backend',
-            strategy='single',
+            docker_options=self._docker_options(
+                detected_stack,
+                Path(temp_dir) / 'backend',
+                'single',
+            ),
             force=False,
         )
 
@@ -558,7 +629,11 @@ class TestCliApp(unittest.TestCase):
             generate_dockerfile_mock.assert_called_once_with(
                 stack=detected_stack,
                 project_path=Path(temp_dir) / 'backend',
-                strategy='single',
+                docker_options=self._docker_options(
+                    detected_stack,
+                    Path(temp_dir) / 'backend',
+                    'single',
+                ),
                 force=False,
             )
             self.assertEqual(result, 0)
@@ -618,7 +693,11 @@ class TestCliApp(unittest.TestCase):
         generate_dockerfile_mock.assert_called_once_with(
             stack=detected_stacks[0],
             project_path=root_path,
-            strategy='single',
+            docker_options=self._docker_options(
+                detected_stacks[0],
+                root_path,
+                'single',
+            ),
             force=False,
         )
         generate_compose_mock.assert_not_called()
@@ -656,7 +735,11 @@ class TestCliApp(unittest.TestCase):
             generate_dockerfile_mock.assert_called_once_with(
                 stack=detected_stack,
                 project_path=Path(temp_dir) / 'api',
-                strategy='multi',
+                docker_options=self._docker_options(
+                    detected_stack,
+                    Path(temp_dir) / 'api',
+                    'multi',
+                ),
                 force=False,
             )
             self.assertEqual(result, 0)
@@ -742,7 +825,11 @@ class TestCliApp(unittest.TestCase):
             generate_dockerfile_mock.assert_called_once_with(
                 stack=detected_stack,
                 project_path=project_path,
-                strategy='single',
+                docker_options=self._docker_options(
+                    detected_stack,
+                    project_path,
+                    'single',
+                ),
                 force=True,
             )
             self.assertEqual(result, 0)
