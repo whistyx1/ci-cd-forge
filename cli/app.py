@@ -82,6 +82,8 @@ def _verify_docker_images_if_requested(
     for options in project_options:
         _verify_docker_option_images(options)
 
+    print('Docker images verified successfully.')
+
 
 def run_cli() -> int:
     input_path = input('Enter project path:').strip()

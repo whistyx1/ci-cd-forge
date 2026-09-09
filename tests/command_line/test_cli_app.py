@@ -229,12 +229,14 @@ class TestCliApp(unittest.TestCase):
                 'strategy': 'single',
             },
         ]
+        stdout = StringIO()
 
         with patch('cli.app.confirm', return_value=True):
             with patch(
                 'cli.app._verify_docker_option_images',
             ) as verify_mock:
-                _verify_docker_images_if_requested(options)
+                with redirect_stdout(stdout):
+                    _verify_docker_images_if_requested(options)
 
         self.assertEqual(
             verify_mock.call_args_list,
@@ -242,6 +244,10 @@ class TestCliApp(unittest.TestCase):
                 call(options[0]),
                 call(options[1]),
             ],
+        )
+        self.assertEqual(
+            stdout.getvalue(),
+            'Docker images verified successfully.\n',
         )
 
     def test_choose_projects_returns_single_project_without_prompt(self):

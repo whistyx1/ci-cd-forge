@@ -29,14 +29,21 @@ class TestCliPrompts(unittest.TestCase):
             'strategy': 'single',
         }
 
+        stdout = StringIO()
+
         with patch(
             'builtins.input',
             side_effect=['base_image', 'python:3.13-slim', ''],
         ):
-            result = review_docker_options(options)
+            with redirect_stdout(stdout):
+                result = review_docker_options(options)
 
         self.assertEqual(result['base_image'], 'python:3.13-slim')
         self.assertEqual(options['base_image'], 'python:3.12-slim')
+        self.assertEqual(
+            stdout.getvalue(),
+            'Updated base_image: python:3.13-slim\n',
+        )
 
     def test_repeats_after_unknown_or_non_editable_option(self):
         options = {

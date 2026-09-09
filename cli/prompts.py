@@ -147,6 +147,8 @@ def review_docker_options(options: dict) -> dict:
         ):
             print('Unknown or non-editable Docker option.')
             continue
-        reviewed_options[user_option] = ask_required_value(
+        new_value = ask_required_value(
             f"Enter new value for {user_option.replace('_', ' ')}"
         )
+        reviewed_options[user_option] = new_value
+        print(f'Updated {user_option}: {new_value}')
