@@ -3,9 +3,14 @@ from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import patch
+from unittest.mock import call, patch
 
-from cli.app import run_cli
+from cli.app import (
+    _review_project_docker_options,
+    _verify_docker_images_if_requested,
+    _verify_docker_option_images,
+    run_cli,
+)
 from cli.display import display_created_paths
 from cli.prompts import (
     ask_port,
@@ -19,6 +24,232 @@ from cli.prompts import (
 
 
 class TestCliApp(unittest.TestCase):
+    def setUp(self):
+        self.docker_options_patcher = patch(
+            'cli.app._review_project_docker_options',
+            side_effect=self._docker_options,
+        )
+        self.review_docker_options_mock = (
+            self.docker_options_patcher.start()
+        )
+        self.addCleanup(self.docker_options_patcher.stop)
+
+        self.verify_images_patcher = patch(
+            'cli.app._verify_docker_images_if_requested',
+        )
+        self.verify_images_mock = self.verify_images_patcher.start()
+        self.addCleanup(self.verify_images_patcher.stop)
+
+    @staticmethod
+    def _docker_options(stack, project_path, strategy):
+        return {
+            'base_image': f"{stack['language(s)'].lower()}:test",
+            'workdir': '/app',
+            'port': stack.get('port'),
+            'strategy': strategy,
+        }
+
+    def _project_docker_options(self, stacks, strategies):
+        return {
+            stack['path']: self._docker_options(
+                stack,
+                Path(),
+                strategies[stack['path']],
+            )
+            for stack in stacks
+        }
+
+    def test_reviews_recommended_docker_options(self):
+        stack = {
+            'path': 'root/backend',
+            'language(s)': 'Python',
+            'port': 8000,
+            'commands': {
+                'install_command': 'pip install -r requirements.txt',
+                'build_command': None,
+                'start_command': 'python app.py',
+            },
+        }
+        project_path = Path('/project/backend')
+        recommended_options = {
+            'base_image': 'python:3.12-slim',
+            'workdir': '/app',
+            'port': 8000,
+            'strategy': 'single',
+        }
+        reviewable_options = {
+            **recommended_options,
+            **stack['commands'],
+        }
+        reviewed_values = {
+            **reviewable_options,
+            'base_image': 'python:3.13-slim',
+            'start_command': 'gunicorn app:app',
+        }
+
+        with patch(
+            'cli.app.resolve_docker_recommendation',
+            return_value={
+                'options': recommended_options,
+                'requires_confirmation': [],
+            },
+        ) as recommendation_mock:
+            with patch('cli.app.display_docker_options') as display_mock:
+                with patch(
+                    'cli.app.review_docker_options',
+                    return_value=reviewed_values.copy(),
+                ) as review_mock:
+                    result = _review_project_docker_options(
+                        stack=stack,
+                        project_path=project_path,
+                        strategy='single',
+                    )
+
+        recommendation_mock.assert_called_once_with(
+            stack=stack,
+            project_path=project_path,
+            strategy='single',
+        )
+        display_mock.assert_called_once_with(
+            'root/backend',
+            reviewable_options,
+        )
+        review_mock.assert_called_once_with(reviewable_options)
+        self.assertEqual(
+            result,
+            {
+                **recommended_options,
+                'base_image': 'python:3.13-slim',
+            },
+        )
+        self.assertEqual(
+            stack['commands'],
+            {
+                'install_command': 'pip install -r requirements.txt',
+                'build_command': None,
+                'start_command': 'gunicorn app:app',
+            },
+        )
+
+    def test_verifies_single_stage_docker_image(self):
+        options = {
+            'base_image': 'python:3.12-slim',
+            'workdir': '/app',
+            'port': None,
+            'strategy': 'single',
+        }
+
+        with patch(
+            'cli.app.docker_image_exists',
+            return_value=True,
+        ) as image_exists_mock:
+            result = _verify_docker_option_images(options)
+
+        self.assertIsNone(result)
+        image_exists_mock.assert_called_once_with('python:3.12-slim')
+
+    def test_verifies_builder_and_runtime_images_for_multistage(self):
+        options = {
+            'base_image': 'golang:1.23-alpine',
+            'workdir': '/app',
+            'port': None,
+            'strategy': 'multi',
+            'runtime_image': 'alpine:3.20',
+            'artifact_source': '/app/service',
+            'artifact_destination': '/app/service',
+        }
+
+        with patch(
+            'cli.app.docker_image_exists',
+            return_value=True,
+        ) as image_exists_mock:
+            _verify_docker_option_images(options)
+
+        self.assertEqual(
+            image_exists_mock.call_args_list,
+            [
+                call('golang:1.23-alpine'),
+                call('alpine:3.20'),
+            ],
+        )
+
+    def test_rejects_unavailable_docker_image(self):
+        options = {
+            'base_image': 'python:20',
+            'workdir': '/app',
+            'port': None,
+            'strategy': 'single',
+        }
+
+        with patch(
+            'cli.app.docker_image_exists',
+            return_value=False,
+        ):
+            with self.assertRaisesRegex(
+                ValueError,
+                'Docker image is not available: python:20',
+            ):
+                _verify_docker_option_images(options)
+
+    def test_skips_docker_image_verification_when_declined(self):
+        options = [
+            {
+                'base_image': 'python:3.12-slim',
+                'workdir': '/app',
+                'port': None,
+                'strategy': 'single',
+            },
+        ]
+
+        with patch('cli.app.confirm', return_value=False) as confirm_mock:
+            with patch(
+                'cli.app._verify_docker_option_images',
+            ) as verify_mock:
+                result = _verify_docker_images_if_requested(options)
+
+        confirm_mock.assert_called_once_with(
+            'Verify Docker images online before generation?',
+            default=False,
+        )
+        verify_mock.assert_not_called()
+        self.assertIsNone(result)
+
+    def test_verifies_each_project_when_requested(self):
+        options = [
+            {
+                'base_image': 'python:3.12-slim',
+                'workdir': '/app',
+                'port': None,
+                'strategy': 'single',
+            },
+            {
+                'base_image': 'node:22-slim',
+                'workdir': '/app',
+                'port': 3000,
+                'strategy': 'single',
+            },
+        ]
+        stdout = StringIO()
+
+        with patch('cli.app.confirm', return_value=True):
+            with patch(
+                'cli.app._verify_docker_option_images',
+            ) as verify_mock:
+                with redirect_stdout(stdout):
+                    _verify_docker_images_if_requested(options)
+
+        self.assertEqual(
+            verify_mock.call_args_list,
+            [
+                call(options[0]),
+                call(options[1]),
+            ],
+        )
+        self.assertEqual(
+            stdout.getvalue(),
+            'Docker images verified successfully.\n',
+        )
+
     def test_choose_projects_returns_single_project_without_prompt(self):
         stacks = [{'path': 'root', 'language(s)': 'Python'}]
 
@@ -474,7 +705,11 @@ class TestCliApp(unittest.TestCase):
         generate_dockerfile_mock.assert_called_once_with(
             stack=detected_stack,
             project_path=Path(temp_dir) / 'backend',
-            strategy='single',
+            docker_options=self._docker_options(
+                detected_stack,
+                Path(temp_dir) / 'backend',
+                'single',
+            ),
             force=False,
         )
 
@@ -558,8 +793,21 @@ class TestCliApp(unittest.TestCase):
             generate_dockerfile_mock.assert_called_once_with(
                 stack=detected_stack,
                 project_path=Path(temp_dir) / 'backend',
-                strategy='single',
+                docker_options=self._docker_options(
+                    detected_stack,
+                    Path(temp_dir) / 'backend',
+                    'single',
+                ),
                 force=False,
+            )
+            self.verify_images_mock.assert_called_once_with(
+                [
+                    self._docker_options(
+                        detected_stack,
+                        Path(temp_dir) / 'backend',
+                        'single',
+                    )
+                ]
             )
             self.assertEqual(result, 0)
             self.assertIn('Created files:', stdout.getvalue())
@@ -618,7 +866,11 @@ class TestCliApp(unittest.TestCase):
         generate_dockerfile_mock.assert_called_once_with(
             stack=detected_stacks[0],
             project_path=root_path,
-            strategy='single',
+            docker_options=self._docker_options(
+                detected_stacks[0],
+                root_path,
+                'single',
+            ),
             force=False,
         )
         generate_compose_mock.assert_not_called()
@@ -656,7 +908,11 @@ class TestCliApp(unittest.TestCase):
             generate_dockerfile_mock.assert_called_once_with(
                 stack=detected_stack,
                 project_path=Path(temp_dir) / 'api',
-                strategy='multi',
+                docker_options=self._docker_options(
+                    detected_stack,
+                    Path(temp_dir) / 'api',
+                    'multi',
+                ),
                 force=False,
             )
             self.assertEqual(result, 0)
@@ -742,7 +998,11 @@ class TestCliApp(unittest.TestCase):
             generate_dockerfile_mock.assert_called_once_with(
                 stack=detected_stack,
                 project_path=project_path,
-                strategy='single',
+                docker_options=self._docker_options(
+                    detected_stack,
+                    project_path,
+                    'single',
+                ),
                 force=True,
             )
             self.assertEqual(result, 0)
@@ -794,7 +1054,25 @@ class TestCliApp(unittest.TestCase):
                     'root/backend': 'single',
                     'root/frontend': 'single',
                 },
+                project_docker_options=self._project_docker_options(
+                    detected_stacks,
+                    {
+                        'root/backend': 'single',
+                        'root/frontend': 'single',
+                    },
+                ),
                 force=False,
+            )
+            self.verify_images_mock.assert_called_once_with(
+                list(
+                    self._project_docker_options(
+                        detected_stacks,
+                        {
+                            'root/backend': 'single',
+                            'root/frontend': 'single',
+                        },
+                    ).values()
+                )
             )
             self.assertEqual(result, 0)
             self.assertIn('Created files:', stdout.getvalue())
@@ -858,6 +1136,10 @@ class TestCliApp(unittest.TestCase):
                 root_path=root_path,
                 stacks=detected_stacks,
                 strategies=strategies,
+                project_docker_options=self._project_docker_options(
+                    detected_stacks,
+                    strategies,
+                ),
                 force=False,
             )
             self.assertEqual(result, 0)
@@ -973,6 +1255,13 @@ class TestCliApp(unittest.TestCase):
                     'root/backend': 'single',
                     'root/frontend': 'single',
                 },
+                project_docker_options=self._project_docker_options(
+                    detected_stacks,
+                    {
+                        'root/backend': 'single',
+                        'root/frontend': 'single',
+                    },
+                ),
                 force=True,
             )
             self.assertEqual(result, 0)

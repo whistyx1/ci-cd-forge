@@ -31,3 +31,13 @@ def display_created_paths(paths: list[Path]) -> None:
     for path in paths:
         if path.is_file():
             print(f'- {path}')
+
+
+def display_docker_options(
+    project_path: str,
+    options: dict,
+) -> None:
+    print(f'Docker configuration for {project_path}:')
+    for field, value in options.items():
+        display_value = 'None' if value is None else value
+        print(f'- {field}: {display_value}')

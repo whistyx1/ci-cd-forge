@@ -129,3 +129,26 @@ def confirm_multistage_options(
 
         prompt = f"Enter {field.replace('_', ' ')}"
         stack[field] = ask_required_value(prompt)
+
+
+def review_docker_options(options: dict) -> dict:
+    reviewed_options = options.copy()
+    non_editable_options = ('strategy', 'port')
+
+    while True:
+        user_option = input(
+            'Enter Docker option to change (leave empty to continue): '
+        ).strip()
+        if not user_option:
+            return reviewed_options
+        if (
+            user_option.lower() in non_editable_options
+            or user_option not in reviewed_options
+        ):
+            print('Unknown or non-editable Docker option.')
+            continue
+        new_value = ask_required_value(
+            f"Enter new value for {user_option.replace('_', ' ')}"
+        )
+        reviewed_options[user_option] = new_value
+        print(f'Updated {user_option}: {new_value}')

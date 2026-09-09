@@ -1,7 +1,9 @@
 from pathlib import Path
+from typing import Literal
 
 from cli.display import (
     display_created_paths,
+    display_docker_options,
     display_errors,
     display_existing_paths,
     display_stacks,
@@ -15,10 +17,72 @@ from cli.prompts import (
     choose_strategy,
     confirm,
     confirm_multistage_options,
+    review_docker_options,
 )
 from detect.stack import create_stack
 from generators.compose.compose_service import generate_recommended_compose
+from generators.docker.recommendation_resolver import (
+    DockerGeneratorOptions,
+    resolve_docker_recommendation,
+)
 from generators.docker.service import generate_recommended_dockerfile
+from validators.docker_image import docker_image_exists
+
+
+def _review_project_docker_options(
+    stack: dict,
+    project_path: Path,
+    strategy: Literal['single', 'multi'],
+) -> DockerGeneratorOptions:
+    recommended_docker = resolve_docker_recommendation(
+        stack=stack,
+        project_path=project_path,
+        strategy=strategy,
+    )
+    options = recommended_docker['options']
+    commands = stack.get('commands') or {}
+    reviewable_options = {
+        **options,
+        **commands,
+    }
+    display_docker_options(stack['path'], reviewable_options)
+    reviewed_options = review_docker_options(reviewable_options)
+    for command_name in commands:
+        commands[command_name] = reviewed_options.pop(command_name)
+
+    stack['commands'] = commands
+    return reviewed_options
+
+
+def _verify_docker_option_images(
+    options: DockerGeneratorOptions,
+) -> None:
+    fields = ('base_image', 'runtime_image')
+
+    for field in fields:
+        image = options.get(field)
+        if image is None:
+            continue
+
+        if not docker_image_exists(image):
+            raise ValueError(
+                f'Docker image is not available: {image}'
+            )
+
+
+def _verify_docker_images_if_requested(
+    project_options: list[DockerGeneratorOptions],
+) -> None:
+    if not confirm(
+        'Verify Docker images online before generation?',
+        default=False,
+    ):
+        return
+
+    for options in project_options:
+        _verify_docker_option_images(options)
+
+    print('Docker images verified successfully.')
 
 
 def run_cli() -> int:
@@ -98,38 +162,61 @@ def run_cli() -> int:
                     stack=stack,
                     project_path=detected_project_path,
                 )
+            docker_options = _review_project_docker_options(
+                stack=stack,
+                project_path=detected_project_path,
+                strategy=strategy,
+            )
+
+            _verify_docker_images_if_requested([docker_options])
 
             generate_recommended_dockerfile(
                 stack=stack,
                 project_path=detected_project_path,
-                strategy=strategy,
+                docker_options=docker_options,
                 force=force,
             )
         else:
             strategies = choose_strategies(stacks)
+            project_docker_options = {}
 
             for project_stack in stacks:
-                if strategies[project_stack['path']] != 'multi':
-                    continue
+                stack_path = project_stack['path']
+                strategy = strategies[stack_path]
 
                 stack_project_path = resolve_project_path(
                     project_stack,
                     project_path,
                 )
-                confirm_multistage_options(
-                    stack=project_stack,
-                    project_path=stack_project_path,
+
+                if strategy == 'multi':
+                    confirm_multistage_options(
+                        stack=project_stack,
+                        project_path=stack_project_path,
+                    )
+
+                project_docker_options[stack_path] = (
+                    _review_project_docker_options(
+                        stack=project_stack,
+                        project_path=stack_project_path,
+                        strategy=strategy,
+                    )
                 )
+
+            _verify_docker_images_if_requested(
+                list(project_docker_options.values())
+            )
 
             generate_recommended_compose(
                 root_path=project_path,
                 stacks=stacks,
                 strategies=strategies,
                 force=force,
+                project_docker_options=project_docker_options,
             )
 
         display_created_paths(output_paths)
-    except (ValueError, OSError) as error:
+    except (ValueError, OSError, RuntimeError) as error:
         print(f'Error: {error}')
         return 1
 

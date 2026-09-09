@@ -6,6 +6,40 @@ from generators.docker.service import generate_recommended_dockerfile
 
 
 class TestDockerService(unittest.TestCase):
+    def test_generates_dockerfile_with_provided_options(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'requirements.txt').write_text(
+                'requests==2.32.3\n',
+                encoding='utf-8',
+            )
+            stack = {
+                'language(s)': 'Python',
+                'manifest_file': 'requirements.txt',
+                'commands': {
+                    'install_command': (
+                        'python -m pip install -r requirements.txt'
+                    ),
+                    'build_command': None,
+                    'start_command': 'python main.py',
+                },
+            }
+
+            result = generate_recommended_dockerfile(
+                stack=stack,
+                project_path=project_path,
+                docker_options={
+                    'base_image': 'python:3.13-slim',
+                    'workdir': '/workspace',
+                    'port': None,
+                    'strategy': 'single',
+                },
+            )
+
+            dockerfile_text = result.read_text(encoding='utf-8')
+            self.assertIn('FROM python:3.13-slim\n', dockerfile_text)
+            self.assertIn('WORKDIR /workspace\n', dockerfile_text)
+
     def test_generates_recommended_single_stage_dockerfile(self):
         with TemporaryDirectory() as temp_dir:
             project_path = Path(temp_dir)

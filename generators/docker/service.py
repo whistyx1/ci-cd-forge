@@ -2,14 +2,18 @@ from pathlib import Path
 from typing import Literal
 
 from detect.markers import manifest_files
-from generators.docker.recommendation_resolver import resolve_docker_recommendation
 from generators.docker.generator import generate_project_dockerfile
+from generators.docker.recommendation_resolver import (
+    DockerGeneratorOptions,
+    resolve_docker_recommendation,
+)
 
 
 def generate_recommended_dockerfile(
     stack: dict,
     project_path: Path,
     strategy: Literal['single', 'multi'] = 'single',
+    docker_options: DockerGeneratorOptions | None = None,
     force: bool = False,
 ) -> Path:
     detection_errors = stack.get('errors') or []
@@ -22,24 +26,26 @@ def generate_recommended_dockerfile(
         raise ValueError(
             f'Multiple project languages detected: {languages}.',
         )
-
-    recommendation = resolve_docker_recommendation(
-        stack=stack,
-        project_path=project_path,
-        strategy=strategy,
-    )
-    if recommendation['requires_confirmation']:
-        unconfirmed_fields = ', '.join(recommendation['requires_confirmation'])
-        raise ValueError(
-            f'The following fields require confirmation: {unconfirmed_fields}.'
+    if docker_options is None:
+        recommendation = resolve_docker_recommendation(
+            stack=stack,
+            project_path=project_path,
+            strategy=strategy,
         )
-    options = recommendation['options']
+        if recommendation['requires_confirmation']:
+            unconfirmed_fields = ', '.join(
+                recommendation['requires_confirmation']
+            )
+            raise ValueError(
+                f'The following fields require confirmation: {unconfirmed_fields}.'
+            )
+        docker_options = recommendation['options']
 
     return generate_project_dockerfile(
         stack=stack,
         project_path=project_path,
         force=force,
-        **options,
+        **docker_options,
     )
 
 
