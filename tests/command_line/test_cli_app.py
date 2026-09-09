@@ -53,6 +53,11 @@ class TestCliApp(unittest.TestCase):
             'path': 'root/backend',
             'language(s)': 'Python',
             'port': 8000,
+            'commands': {
+                'install_command': 'pip install -r requirements.txt',
+                'build_command': None,
+                'start_command': 'python app.py',
+            },
         }
         project_path = Path('/project/backend')
         recommended_options = {
@@ -61,9 +66,14 @@ class TestCliApp(unittest.TestCase):
             'port': 8000,
             'strategy': 'single',
         }
-        reviewed_options = {
+        reviewable_options = {
             **recommended_options,
+            **stack['commands'],
+        }
+        reviewed_values = {
+            **reviewable_options,
             'base_image': 'python:3.13-slim',
+            'start_command': 'gunicorn app:app',
         }
 
         with patch(
@@ -76,7 +86,7 @@ class TestCliApp(unittest.TestCase):
             with patch('cli.app.display_docker_options') as display_mock:
                 with patch(
                     'cli.app.review_docker_options',
-                    return_value=reviewed_options,
+                    return_value=reviewed_values.copy(),
                 ) as review_mock:
                     result = _review_project_docker_options(
                         stack=stack,
@@ -91,10 +101,24 @@ class TestCliApp(unittest.TestCase):
         )
         display_mock.assert_called_once_with(
             'root/backend',
-            recommended_options,
+            reviewable_options,
         )
-        review_mock.assert_called_once_with(recommended_options)
-        self.assertEqual(result, reviewed_options)
+        review_mock.assert_called_once_with(reviewable_options)
+        self.assertEqual(
+            result,
+            {
+                **recommended_options,
+                'base_image': 'python:3.13-slim',
+            },
+        )
+        self.assertEqual(
+            stack['commands'],
+            {
+                'install_command': 'pip install -r requirements.txt',
+                'build_command': None,
+                'start_command': 'gunicorn app:app',
+            },
+        )
 
     def test_choose_projects_returns_single_project_without_prompt(self):
         stacks = [{'path': 'root', 'language(s)': 'Python'}]

@@ -39,8 +39,18 @@ def _review_project_docker_options(
         strategy=strategy,
     )
     options = recommended_docker['options']
-    display_docker_options(stack['path'], options)
-    return review_docker_options(options)
+    commands = stack.get('commands') or {}
+    reviewable_options = {
+        **options,
+        **commands,
+    }
+    display_docker_options(stack['path'], reviewable_options)
+    reviewed_options = review_docker_options(reviewable_options)
+    for command_name in commands:
+        commands[command_name] = reviewed_options.pop(command_name)
+
+    stack['commands'] = commands
+    return reviewed_options
 
 
 def run_cli() -> int:
