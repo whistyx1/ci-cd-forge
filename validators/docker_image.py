@@ -30,7 +30,7 @@ def validate_docker_image(
         raise ValueError(f'{field} contains an invalid registry port')
 
 
-def docker_image_exists(image: str, timeout: int = 10) -> bool:
+def docker_image_exists(image: str, timeout: int = 30) -> bool:
     validate_docker_image(image)
     try:
         result = subprocess.run(
