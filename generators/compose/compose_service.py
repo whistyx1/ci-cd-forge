@@ -3,8 +3,9 @@ from typing import Literal
 
 from detect.stack import create_stack
 from generators.compose.compose_generator import generate_project_compose
-from generators.docker.service import generate_recommended_dockerfile
 from generators.docker.dockerfile_writer import find_dockerfile_case_variants
+from generators.docker.recommendation_resolver import DockerGeneratorOptions
+from generators.docker.service import generate_recommended_dockerfile
 from generators.file_transaction import FileTransaction
 
 
@@ -27,6 +28,7 @@ def generate_recommended_compose(
     root_path: Path,
     stacks: list[dict] | None = None,
     strategies: dict[str, Literal['single', 'multi']] | None = None,
+    project_docker_options: dict[str, DockerGeneratorOptions] | None = None,
     force: bool = False,
 ) -> Path:
     project_stacks = stacks
@@ -57,11 +59,18 @@ def generate_recommended_compose(
 
     try:
         for stack, project_path in zip(project_stacks, project_paths):
+            stack_path = stack['path']
+            docker_options = (
+                project_docker_options.get(stack_path)
+                if project_docker_options is not None
+                else None
+            )
             strategy = project_strategies.get(stack['path'], 'single')
             generate_recommended_dockerfile(
                 stack=stack,
                 project_path=project_path,
                 strategy=strategy,
+                docker_options=docker_options,
                 force=force,
             )
 

@@ -41,7 +41,7 @@ class TestCliEndToEnd(unittest.TestCase):
 
             completed_process = subprocess.run(
                 [sys.executable, str(main_path)],
-                input=f'{temp_dir}\nall\n8000\n3000\ny\n',
+                input=f'{temp_dir}\nall\n8000\n3000\ny\n\n\n',
                 capture_output=True,
                 text=True,
                 timeout=10,

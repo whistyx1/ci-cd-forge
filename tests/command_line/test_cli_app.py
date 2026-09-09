@@ -38,6 +38,16 @@ class TestCliApp(unittest.TestCase):
             'strategy': strategy,
         }
 
+    def _project_docker_options(self, stacks, strategies):
+        return {
+            stack['path']: self._docker_options(
+                stack,
+                Path(),
+                strategies[stack['path']],
+            )
+            for stack in stacks
+        }
+
     def test_reviews_recommended_docker_options(self):
         stack = {
             'path': 'root/backend',
@@ -881,6 +891,13 @@ class TestCliApp(unittest.TestCase):
                     'root/backend': 'single',
                     'root/frontend': 'single',
                 },
+                project_docker_options=self._project_docker_options(
+                    detected_stacks,
+                    {
+                        'root/backend': 'single',
+                        'root/frontend': 'single',
+                    },
+                ),
                 force=False,
             )
             self.assertEqual(result, 0)
@@ -945,6 +962,10 @@ class TestCliApp(unittest.TestCase):
                 root_path=root_path,
                 stacks=detected_stacks,
                 strategies=strategies,
+                project_docker_options=self._project_docker_options(
+                    detected_stacks,
+                    strategies,
+                ),
                 force=False,
             )
             self.assertEqual(result, 0)
@@ -1060,6 +1081,13 @@ class TestCliApp(unittest.TestCase):
                     'root/backend': 'single',
                     'root/frontend': 'single',
                 },
+                project_docker_options=self._project_docker_options(
+                    detected_stacks,
+                    {
+                        'root/backend': 'single',
+                        'root/frontend': 'single',
+                    },
+                ),
                 force=True,
             )
             self.assertEqual(result, 0)

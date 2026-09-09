@@ -134,18 +134,29 @@ def run_cli() -> int:
             )
         else:
             strategies = choose_strategies(stacks)
+            project_docker_options = {}
 
             for project_stack in stacks:
-                if strategies[project_stack['path']] != 'multi':
-                    continue
+                stack_path = project_stack['path']
+                strategy = strategies[stack_path]
 
                 stack_project_path = resolve_project_path(
                     project_stack,
                     project_path,
                 )
-                confirm_multistage_options(
-                    stack=project_stack,
-                    project_path=stack_project_path,
+
+                if strategy == 'multi':
+                    confirm_multistage_options(
+                        stack=project_stack,
+                        project_path=stack_project_path,
+                    )
+
+                project_docker_options[stack_path] = (
+                    _review_project_docker_options(
+                        stack=project_stack,
+                        project_path=stack_project_path,
+                        strategy=strategy,
+                    )
                 )
 
             generate_recommended_compose(
@@ -153,6 +164,7 @@ def run_cli() -> int:
                 stacks=stacks,
                 strategies=strategies,
                 force=force,
+                project_docker_options=project_docker_options,
             )
 
         display_created_paths(output_paths)

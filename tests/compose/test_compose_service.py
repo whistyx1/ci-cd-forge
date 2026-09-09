@@ -178,17 +178,87 @@ class TestComposeService(unittest.TestCase):
                         stack=stacks[0],
                         project_path=root_path / 'backend',
                         strategy='multi',
+                        docker_options=None,
                         force=False,
                     ),
                     call(
                         stack=stacks[1],
                         project_path=root_path / 'frontend',
                         strategy='single',
+                        docker_options=None,
                         force=False,
                     ),
                 ],
             )
             self.assertEqual(result, compose_path)
+
+    def test_uses_docker_options_for_each_project(self):
+        stacks = [
+            {
+                'path': 'root/backend',
+                'language(s)': 'Python',
+            },
+            {
+                'path': 'root/frontend',
+                'language(s)': 'JavaScript',
+            },
+        ]
+        project_docker_options = {
+            'root/backend': {
+                'base_image': 'python:3.13-slim',
+                'workdir': '/backend',
+                'port': 8000,
+                'strategy': 'single',
+            },
+            'root/frontend': {
+                'base_image': 'node:22-slim',
+                'workdir': '/frontend',
+                'port': 3000,
+                'strategy': 'single',
+            },
+        }
+
+        with TemporaryDirectory() as temp_dir:
+            root_path = Path(temp_dir)
+            compose_path = root_path / 'compose.yaml'
+            (root_path / 'backend').mkdir()
+            (root_path / 'frontend').mkdir()
+
+            with patch(
+                'generators.compose.compose_service.'
+                'generate_recommended_dockerfile',
+            ) as generate_dockerfile_mock:
+                with patch(
+                    'generators.compose.compose_service.'
+                    'generate_project_compose',
+                    return_value=compose_path,
+                ):
+                    result = generate_recommended_compose(
+                        root_path=root_path,
+                        stacks=stacks,
+                        project_docker_options=project_docker_options,
+                    )
+
+        self.assertEqual(
+            generate_dockerfile_mock.call_args_list,
+            [
+                call(
+                    stack=stacks[0],
+                    project_path=root_path / 'backend',
+                    strategy='single',
+                    docker_options=project_docker_options['root/backend'],
+                    force=False,
+                ),
+                call(
+                    stack=stacks[1],
+                    project_path=root_path / 'frontend',
+                    strategy='single',
+                    docker_options=project_docker_options['root/frontend'],
+                    force=False,
+                ),
+            ],
+        )
+        self.assertEqual(result, compose_path)
 
     def test_detects_projects_and_generates_dockerfiles_and_compose(self):
         with TemporaryDirectory() as temp_dir:
