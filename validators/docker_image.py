@@ -1,4 +1,5 @@
 import re
+import subprocess
 
 
 _NAME_COMPONENT = r'[a-z0-9]+(?:(?:[._]|__|[-]+)[a-z0-9]+)*'
@@ -27,3 +28,24 @@ def validate_docker_image(
     registry_port = _REGISTRY_PORT.match(image)
     if registry_port and not 1 <= int(registry_port.group(1)) <= 65535:
         raise ValueError(f'{field} contains an invalid registry port')
+
+
+def docker_image_exists(image: str, timeout: int = 10) -> bool:
+    validate_docker_image(image)
+    try:
+        result = subprocess.run(
+            ['docker', 'manifest', 'inspect', image],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=timeout,
+            check=False,
+        )
+        return result.returncode == 0
+    except FileNotFoundError as error:
+        raise RuntimeError(
+            'Docker CLI is not installed or is not available in PATH'
+        ) from error
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError(
+            f'Docker image check timed out: {image}'
+        ) from error

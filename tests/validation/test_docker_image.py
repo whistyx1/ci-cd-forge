@@ -1,10 +1,75 @@
+import subprocess
 import unittest
+from unittest.mock import patch
 
 from generators.docker.config_validator import validate_dockerfile_config
-from validators.docker_image import validate_docker_image
+from validators.docker_image import docker_image_exists, validate_docker_image
 
 
 class TestDockerImageValidation(unittest.TestCase):
+    def test_returns_true_when_docker_manifest_exists(self):
+        with patch(
+            'validators.docker_image.subprocess.run',
+        ) as run_mock:
+            run_mock.return_value.returncode = 0
+
+            result = docker_image_exists('python:3.12', timeout=5)
+
+        run_mock.assert_called_once_with(
+            ['docker', 'manifest', 'inspect', 'python:3.12'],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+            check=False,
+        )
+        self.assertTrue(result)
+
+    def test_returns_false_when_docker_manifest_is_unavailable(self):
+        with patch(
+            'validators.docker_image.subprocess.run',
+        ) as run_mock:
+            run_mock.return_value.returncode = 1
+
+            result = docker_image_exists('python:20')
+
+        self.assertFalse(result)
+
+    def test_reports_missing_docker_cli(self):
+        with patch(
+            'validators.docker_image.subprocess.run',
+            side_effect=FileNotFoundError,
+        ):
+            with self.assertRaisesRegex(
+                RuntimeError,
+                'Docker CLI is not installed',
+            ):
+                docker_image_exists('python:3.12')
+
+    def test_reports_docker_image_check_timeout(self):
+        timeout_error = subprocess.TimeoutExpired(
+            cmd=['docker', 'manifest', 'inspect', 'python:3.12'],
+            timeout=5,
+        )
+
+        with patch(
+            'validators.docker_image.subprocess.run',
+            side_effect=timeout_error,
+        ):
+            with self.assertRaisesRegex(
+                RuntimeError,
+                'Docker image check timed out: python:3.12',
+            ):
+                docker_image_exists('python:3.12', timeout=5)
+
+    def test_rejects_invalid_reference_before_running_docker(self):
+        with patch(
+            'validators.docker_image.subprocess.run',
+        ) as run_mock:
+            with self.assertRaisesRegex(ValueError, 'base_image'):
+                docker_image_exists('invalid image')
+
+        run_mock.assert_not_called()
+
     def test_accepts_valid_image_references(self):
         valid_images = (
             'python',
