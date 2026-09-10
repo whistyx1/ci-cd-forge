@@ -141,3 +141,26 @@ class TestDockerfileResolver(unittest.TestCase):
                     result,
                     expected,
                 )
+
+    def test_installs_php_dependencies_after_source_copy(self):
+        stack = {
+            'language(s)': 'PHP',
+            'manifest_file': 'composer.json',
+            'commands': {
+                'install_command': 'composer install',
+                'build_command': None,
+                'start_command': (
+                    'php artisan serve --host=0.0.0.0 --port=8000'
+                ),
+            },
+        }
+
+        result = resolve_dockerfile_config(
+            stack=stack,
+            base_image='composer:2',
+            workdir='/app',
+            port=8000,
+            file_names={'composer.json', 'composer.lock'},
+        )
+
+        self.assertTrue(result['install_after_copy'])

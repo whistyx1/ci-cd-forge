@@ -154,3 +154,22 @@ class TestDockerfileRenderer(unittest.TestCase):
             with self.subTest(config=config, field=field):
                 with self.assertRaisesRegex(ValueError, field):
                     generate_dockerfile(config)
+
+    def test_copies_source_before_composer_install_when_requested(self):
+        config = {
+            'base_image': 'composer:2',
+            'workdir': '/app',
+            'dependency_files': ['composer.json', 'composer.lock'],
+            'install_command': 'composer install',
+            'build_command': None,
+            'start_command': 'php artisan serve --host=0.0.0.0 --port=8000',
+            'port': 8000,
+            'install_after_copy': True,
+        }
+
+        dockerfile_text = generate_dockerfile(config)
+
+        copy_index = dockerfile_text.index('COPY . .')
+        run_index = dockerfile_text.index('RUN composer install')
+
+        self.assertLess(copy_index, run_index)
