@@ -36,11 +36,32 @@ def docker_image_exists(image: str, timeout: int = 30) -> bool:
         result = subprocess.run(
             ['docker', 'manifest', 'inspect', image],
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
             timeout=timeout,
             check=False,
         )
-        return result.returncode == 0
+
+        if result.returncode == 0:
+            return True
+
+        error_message = result.stderr.strip()
+        error_message_copy = error_message.lower()
+
+        if (
+            'no such manifest' in error_message_copy
+            or 'manifest unknown' in error_message_copy
+        ):
+            return False
+
+        if not error_message:
+            error_message = 'unknown Docker error'
+
+        raise RuntimeError(
+            f'Docker image verification failed for {image}: '
+            f'{error_message}'
+        )
+
     except FileNotFoundError as error:
         raise RuntimeError(
             'Docker CLI is not installed or is not available in PATH'

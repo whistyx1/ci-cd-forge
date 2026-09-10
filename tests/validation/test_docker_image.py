@@ -12,13 +12,15 @@ class TestDockerImageValidation(unittest.TestCase):
             'validators.docker_image.subprocess.run',
         ) as run_mock:
             run_mock.return_value.returncode = 0
+            run_mock.return_value.stderr = ''
 
             result = docker_image_exists('python:3.12', timeout=5)
 
         run_mock.assert_called_once_with(
             ['docker', 'manifest', 'inspect', 'python:3.12'],
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
             timeout=5,
             check=False,
         )
@@ -29,10 +31,41 @@ class TestDockerImageValidation(unittest.TestCase):
             'validators.docker_image.subprocess.run',
         ) as run_mock:
             run_mock.return_value.returncode = 1
+            run_mock.return_value.stderr = (
+                'no such manifest: docker.io/library/python:20'
+            )
 
             result = docker_image_exists('python:20')
 
         self.assertFalse(result)
+
+    def test_reports_docker_registry_or_network_error(self):
+        with patch(
+            'validators.docker_image.subprocess.run',
+        ) as run_mock:
+            run_mock.return_value.returncode = 1
+            run_mock.return_value.stderr = (
+                'failed to resolve reference: network is unreachable'
+            )
+
+            with self.assertRaisesRegex(
+                RuntimeError,
+                'Docker image verification failed',
+            ):
+                docker_image_exists('python:3.12')
+
+    def test_reports_unknown_docker_error_when_stderr_is_empty(self):
+        with patch(
+            'validators.docker_image.subprocess.run',
+        ) as run_mock:
+            run_mock.return_value.returncode = 1
+            run_mock.return_value.stderr = ''
+
+            with self.assertRaisesRegex(
+                RuntimeError,
+                'unknown Docker error',
+            ):
+                docker_image_exists('python:3.12')
 
     def test_reports_missing_docker_cli(self):
         with patch(
