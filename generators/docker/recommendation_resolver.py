@@ -48,6 +48,15 @@ def resolve_docker_recommendation(
     if not commands.get('start_command'):
         requires_confirmation.append('start_command')
 
+    install_command = commands.get('install_command')
+
+    if (
+        stack['language(s)'] == 'JavaScript'
+        and isinstance(install_command, str)
+        and install_command.startswith('pnpm')
+    ):
+        options['setup_command'] = 'corepack enable'
+
     if strategy == 'single':
         return {
             'options': options,

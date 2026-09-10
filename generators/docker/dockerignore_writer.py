@@ -14,7 +14,6 @@ coverage/
 dist/
 build/
 target/
-bin/
 obj/
 .env
 .env.*

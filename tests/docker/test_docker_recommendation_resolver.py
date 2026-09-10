@@ -125,6 +125,19 @@ class TestDockerRecommendationResolver(unittest.TestCase):
                     strategy='multi',
                 )
 
+    def test_javascript_with_install_pnpm(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            stack = {
+                'language(s)': 'JavaScript',
+                'commands': {'install_command': 'pnpm install --frozen-lockfile'},
+            }
+            result = resolve_docker_recommendation(
+                stack=stack,
+                project_path=project_path,
+            )
+            self.assertEqual(result['options']['setup_command'], 'corepack enable')
+
 
 if __name__ == '__main__':
     unittest.main()

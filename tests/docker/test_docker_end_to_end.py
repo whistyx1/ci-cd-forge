@@ -183,6 +183,39 @@ class TestDockerEndToEnd(unittest.TestCase):
 
             self.assertFalse((project_path / 'Dockerfile').exists())
 
+    def test_generates_corepack_setup_before_pnpm_install(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            (project_path / 'package.json').write_text(
+                json.dumps(
+                    {
+                        'scripts': {'start': 'node server.js'},
+                        'packageManager': 'pnpm@10.0.0',
+                    },
+                ),
+                encoding='utf-8',
+            )
+            (project_path / 'pnpm-lock.yaml').write_text('', encoding='utf-8')
+
+            stacks = create_stack(temp_dir)
+
+            dockerfile_path = generate_recommended_dockerfile(
+                stack=stacks[0],
+                project_path=project_path,
+            )
+            dockerfile_text = dockerfile_path.read_text(encoding='utf-8')
+
+            corepack_command = 'RUN corepack enable'
+            pnpm_command = 'RUN pnpm install --frozen-lockfile'
+
+            self.assertIn(corepack_command, dockerfile_text)
+            self.assertIn(pnpm_command, dockerfile_text)
+
+            corepack_position = dockerfile_text.index(corepack_command)
+            pnpm_position = dockerfile_text.index(pnpm_command)
+
+            self.assertLess(corepack_position, pnpm_position)
+
 
 if __name__ == '__main__':
     unittest.main()
