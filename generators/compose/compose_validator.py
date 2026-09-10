@@ -6,7 +6,7 @@ from validators.compose_environment import validate_compose_environment
 from validators.docker_path import validate_container_path
 
 
-SERVICE_NAME_PATTERN = re.compile(r'^[a-z0-9][a-z0-9_.-]*$')
+SERVICE_NAME_PATTERN = re.compile(r'^[A-Za-z0-9][A-Za-z0-9_.-]*$')
 
 
 def validate_compose(config: ComposeConfig) -> None:

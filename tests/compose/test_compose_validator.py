@@ -7,7 +7,7 @@ class TestComposeValidator(unittest.TestCase):
     def test_accepts_valid_compose_config(self):
         config = {
             'services': {
-                'backend': {
+                'Backend': {
                     'build_context': './backend',
                     'dockerfile': 'Dockerfile',
                     'ports': ['8000:8000'],
@@ -36,7 +36,7 @@ class TestComposeValidator(unittest.TestCase):
                     validate_compose(config)
 
     def test_rejects_invalid_service_names(self):
-        invalid_names = ['', 'Backend', 'my backend', '-backend', 123]
+        invalid_names = ['', 'my backend', '-backend', 123]
 
         for service_name in invalid_names:
             with self.subTest(service_name=service_name):
