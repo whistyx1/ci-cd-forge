@@ -7,6 +7,7 @@ from unittest.mock import call, patch
 
 from cli.app import (
     _review_project_docker_options,
+    _update_start_command_port,
     _verify_docker_images_if_requested,
     _verify_docker_option_images,
     run_cli,
@@ -39,6 +40,49 @@ class TestCliApp(unittest.TestCase):
         )
         self.verify_images_mock = self.verify_images_patcher.start()
         self.addCleanup(self.verify_images_patcher.stop)
+
+    def test_updates_known_framework_start_command_port(self):
+        cases = [
+            (
+                'Django',
+                'python manage.py runserver 0.0.0.0:8000',
+                'python manage.py runserver 0.0.0.0:3000',
+            ),
+            (
+                'Laravel',
+                'php artisan serve --host=0.0.0.0 --port=8000',
+                'php artisan serve --host=0.0.0.0 --port=3000',
+            ),
+        ]
+
+        for framework, start_command, expected in cases:
+            with self.subTest(framework=framework):
+                stack = {
+                    'framework(s)': [{'name': framework}],
+                    'commands': {'start_command': start_command},
+                }
+
+                _update_start_command_port(stack, 3000)
+
+                self.assertEqual(
+                    stack['commands']['start_command'],
+                    expected,
+                )
+
+    def test_preserves_custom_start_command_when_port_changes(self):
+        stack = {
+            'framework(s)': [{'name': 'Django'}],
+            'commands': {
+                'start_command': 'gunicorn config.wsgi:application',
+            },
+        }
+
+        _update_start_command_port(stack, 3000)
+
+        self.assertEqual(
+            stack['commands']['start_command'],
+            'gunicorn config.wsgi:application',
+        )
 
     @staticmethod
     def _docker_options(stack, project_path, strategy):

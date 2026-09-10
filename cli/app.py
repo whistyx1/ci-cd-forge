@@ -85,6 +85,33 @@ def _verify_docker_images_if_requested(
     print('Docker images verified successfully.')
 
 
+def _update_start_command_port(stack: dict, port: int | None = None) -> None:
+    if port is None:
+        return
+
+    framework_names = {
+        framework.get('name')
+        for framework in stack.get('framework(s)', [])
+        if isinstance(framework, dict)
+    }
+    commands = stack.get('commands')
+
+    if not isinstance(commands, dict):
+        return
+
+    start_command = commands.get('start_command')
+    if not isinstance(start_command, str):
+        return
+
+    if 'Django' in framework_names:
+        if start_command.startswith('python manage.py runserver 0.0.0.0:'):
+            start_command = f'python manage.py runserver 0.0.0.0:{port}'
+    elif 'Laravel' in framework_names:
+        if start_command.startswith('php artisan serve --host=0.0.0.0 --port='):
+            start_command = f'php artisan serve --host=0.0.0.0 --port={port}'
+    commands['start_command'] = start_command
+
+
 def run_cli() -> int:
     input_path = input('Enter project path:').strip()
     project_path = Path(input_path).expanduser()
@@ -127,6 +154,7 @@ def run_cli() -> int:
 
         if 'port' not in stack:
             stack['port'] = ask_port(stack)
+        _update_start_command_port(stack=stack, port=stack.get('port'))
 
     if not confirm('Generate container files?'):
         print('Generation cancelled.')
