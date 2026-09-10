@@ -54,15 +54,54 @@ Generating files itself does not require Docker to be running.
 
 ## Installation from source
 
-Clone the repository and create a virtual environment:
+Clone the repository:
 
 ```bash
 git clone https://github.com/whistyx1/ci-cd-forge.git
 cd ci-cd-forge
+```
+
+### macOS and Linux
+
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install .
 ```
+
+### Windows PowerShell
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install .
+```
+
+If PowerShell blocks the activation script, allow it for the current terminal
+session and activate the environment again:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+```
+
+### Windows Command Prompt
+
+```bat
+py -m venv .venv
+.venv\Scripts\activate.bat
+python -m pip install .
+```
+
+### Windows Git Bash
+
+```bash
+py -m venv .venv
+source .venv/Scripts/activate
+python -m pip install .
+```
+
+If the `py` launcher is unavailable on Windows, use `python` in its place.
 
 After installation, the CLI is available as:
 
