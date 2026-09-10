@@ -13,6 +13,7 @@ from ci_cd_forge.cli.app import (
     run_cli,
 )
 from ci_cd_forge.cli.display import display_created_paths
+from ci_cd_forge.cli.paths import get_output_paths
 from ci_cd_forge.cli.prompts import (
     ask_port,
     ask_required_value,
@@ -25,6 +26,19 @@ from ci_cd_forge.cli.prompts import (
 
 
 class TestCliApp(unittest.TestCase):
+    def test_detects_existing_dockerfile_with_different_name_case(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            dockerfile_variant = project_path / 'dockerfile'
+            dockerfile_variant.write_text('existing\n', encoding='utf-8')
+
+            output_paths = get_output_paths(
+                [{'path': 'root'}],
+                project_path,
+            )
+
+            self.assertIn(dockerfile_variant, output_paths)
+
     def setUp(self):
         self.docker_options_patcher = patch(
             'ci_cd_forge.cli.app._review_project_docker_options',
