@@ -182,6 +182,10 @@ operation are restored.
 
 - Project discovery is manifest-based. A source-only directory without a
   supported manifest is not detected as a project.
+- Static HTML/CSS/JavaScript sites without a `package.json` are not currently
+  detected. If such a repository contains a supported nested project, such as
+  a Python data parser, the CLI may report only that nested project; its
+  generated Dockerfile does not serve the static website.
 - A directory containing manifests for multiple supported languages is rejected
   during Docker generation instead of being guessed automatically.
 - A root project and one of its nested projects cannot currently be selected
