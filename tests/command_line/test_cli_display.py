@@ -2,7 +2,7 @@ import unittest
 from contextlib import redirect_stdout
 from io import StringIO
 
-from cli.display import display_docker_options
+from ci_cd_forge.cli.display import display_docker_options
 
 
 class TestCliDisplay(unittest.TestCase):

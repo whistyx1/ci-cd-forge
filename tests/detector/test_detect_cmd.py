@@ -1,10 +1,10 @@
-import unittest
 import json
+import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from detect.detect_cmd import detect_cmd
+from ci_cd_forge.detect.detect_cmd import detect_cmd
 
 
 class TestDetectCmd(unittest.TestCase):
@@ -13,14 +13,17 @@ class TestDetectCmd(unittest.TestCase):
             project_path = Path(temp_dir)
             (project_path / 'requirements.txt').touch()
             (project_path / 'main.py').touch()
-            result = detect_cmd(lang='Python', frameworks=[], files=list(project_path.iterdir()))
+            result = detect_cmd(
+                lang='Python', frameworks=[], files=list(project_path.iterdir())
+            )
             self.assertEqual(
                 result,
                 {
                     'install_command': 'python -m pip install -r requirements.txt',
                     'build_command': None,
                     'start_command': 'python main.py',
-                })
+                },
+            )
 
     def test_detects_django_commands(self):
         with TemporaryDirectory() as temp_dir:
@@ -36,7 +39,8 @@ class TestDetectCmd(unittest.TestCase):
                         'matched': 'django',
                     }
                 ],
-                files=list(project_path.iterdir()))
+                files=list(project_path.iterdir()),
+            )
             self.assertEqual(
                 result,
                 {
@@ -137,7 +141,7 @@ class TestDetectCmd(unittest.TestCase):
                     'install_command': 'npm ci',
                     'build_command': 'npm run build',
                     'start_command': 'npm start',
-                }
+                },
             )
 
     def test_uses_npm_commands_without_lock_file(self):
@@ -214,7 +218,7 @@ class TestDetectCmd(unittest.TestCase):
                             'install_command': install_command,
                             'build_command': build_command,
                             'start_command': start_command,
-                        }
+                        },
                     )
 
     def test_ignores_invalid_package_scripts_structure(self):
@@ -274,7 +278,7 @@ class TestDetectCmd(unittest.TestCase):
                     'install_command': None,
                     'build_command': None,
                     'start_command': None,
-                }
+                },
             )
 
     def test_detects_go_application_commands(self):
@@ -283,63 +287,58 @@ class TestDetectCmd(unittest.TestCase):
             go_mod_path = project_path / 'go.mod'
             main_go_path = project_path / 'main.go'
             go_mod_path.write_text(
-                '''
+                """
                 module example.com/my-service
 
                 go 1.22
-                '''.strip(),
-                encoding='utf-8'
+                """.strip(),
+                encoding='utf-8',
             )
             main_go_path.write_text(
-                '''
+                """
                     package main
 
                     func main() {
                     }
-                '''.strip(),
-                encoding='utf-8'
+                """.strip(),
+                encoding='utf-8',
             )
             result = detect_cmd(
-                    lang='Go',
-                    frameworks=[],
-                    files=list(project_path.iterdir())
-                )
+                lang='Go', frameworks=[], files=list(project_path.iterdir())
+            )
             self.assertEqual(
                 result,
                 {
                     'install_command': 'go mod download',
                     'build_command': 'go build -o app .',
                     'start_command': './app',
-                }
+                },
             )
 
     def test_does_not_generate_start_command_for_go_library(self):
         with TemporaryDirectory() as temp_dir:
             project_path = Path(temp_dir)
-            go_mod_path = project_path / 'go.mod'
             library_path = project_path / 'library.go'
             library_path.write_text(
-                '''
+                """
                     package library
 
                     func Add(a int, b int) int {
                         return a + b
                     }
-                '''.strip(),
-                encoding='utf-8'
+                """.strip(),
+                encoding='utf-8',
             )
             result = detect_cmd(
-                    lang='Go',
-                    frameworks=[],
-                    files=list(project_path.iterdir())
-                )
+                lang='Go', frameworks=[], files=list(project_path.iterdir())
+            )
             self.assertEqual(
                 result,
                 {
                     'install_command': None,
                     'build_command': None,
                     'start_command': None,
-                }
+                },
             )
 
     def test_returns_empty_commands_for_non_utf8_source_file(self):
@@ -394,7 +393,7 @@ class TestDetectCmd(unittest.TestCase):
             project_path = Path(temp_dir)
             cargo_toml_path = project_path / 'Cargo.toml'
             cargo_toml_path.write_text(
-                '''
+                """
                     [package]
                     name = "api-service"
                     version = "0.1.0"
@@ -402,22 +401,20 @@ class TestDetectCmd(unittest.TestCase):
 
                     [dependencies]
                     axum = "0.8"
-                '''
+                """
             )
             src_path = project_path / 'src'
             src_path.mkdir()
             main_path = project_path / 'src' / 'main.rs'
             main_path.write_text(
-                '''
+                """
                 fn main() {
                 }
-                '''.strip(),
-                encoding='utf-8'
+                """.strip(),
+                encoding='utf-8',
             )
             result = detect_cmd(
-                lang='Rust',
-                frameworks=[],
-                files=list(project_path.iterdir())
+                lang='Rust', frameworks=[], files=list(project_path.iterdir())
             )
             self.assertEqual(
                 result,
@@ -425,7 +422,7 @@ class TestDetectCmd(unittest.TestCase):
                     'install_command': 'cargo fetch',
                     'build_command': 'cargo build --release',
                     'start_command': './target/release/api-service',
-                }
+                },
             )
 
     def test_ignores_invalid_cargo_package_structure(self):
@@ -464,22 +461,22 @@ class TestDetectCmd(unittest.TestCase):
             gemfile_path = project_path / 'Gemfile'
             app_rb_path = project_path / 'app.rb'
             gemfile_path.write_text(
-                '''
+                """
                     source 'https://rubygems.org'
 
                     gem 'sinatra'
-                '''.strip(),
-                encoding='utf-8'
+                """.strip(),
+                encoding='utf-8',
             )
             app_rb_path.write_text(
-                '''
+                """
                 require 'sinatra'
 
                 get '/' do
                 'Hello'
                 end
-                '''.strip(),
-                encoding='utf-8'
+                """.strip(),
+                encoding='utf-8',
             )
             result = detect_cmd(
                 lang='Ruby',
@@ -490,7 +487,7 @@ class TestDetectCmd(unittest.TestCase):
                         'matched': 'sinatra',
                     }
                 ],
-                files=list(project_path.iterdir())
+                files=list(project_path.iterdir()),
             )
             self.assertEqual(
                 result,
@@ -498,7 +495,7 @@ class TestDetectCmd(unittest.TestCase):
                     'install_command': 'bundle install',
                     'build_command': None,
                     'start_command': 'bundle exec ruby app.rb',
-                }
+                },
             )
 
     def test_detects_rails_commands(self):
@@ -506,12 +503,12 @@ class TestDetectCmd(unittest.TestCase):
             project_path = Path(temp_dir)
             gemfile_path = project_path / 'Gemfile'
             gemfile_path.write_text(
-                '''
+                """
                     source 'https://rubygems.org'
 
                     gem 'rails'
-                '''.strip(),
-                encoding='utf-8'
+                """.strip(),
+                encoding='utf-8',
             )
             bin_path = project_path / 'bin'
             bin_path.mkdir()
@@ -525,7 +522,7 @@ class TestDetectCmd(unittest.TestCase):
                         'matched': 'rails',
                     }
                 ],
-                files=list(project_path.iterdir())
+                files=list(project_path.iterdir()),
             )
             self.assertEqual(
                 result,
@@ -533,7 +530,7 @@ class TestDetectCmd(unittest.TestCase):
                     'install_command': 'bundle install',
                     'build_command': None,
                     'start_command': 'bin/rails server -b 0.0.0.0',
-                }
+                },
             )
 
     def test_detects_laravel_commands(self):
@@ -541,14 +538,14 @@ class TestDetectCmd(unittest.TestCase):
             project_path = Path(temp_dir)
             composer_json_path = project_path / 'composer.json'
             composer_json_path.write_text(
-                '''
+                """
                     {
                         "require": {
                             "laravel/framework": "^12.0"
                         }
                     }
-                '''.strip(),
-                encoding='utf-8'
+                """.strip(),
+                encoding='utf-8',
             )
             (project_path / 'composer.lock').touch()
             (project_path / 'artisan').touch()
@@ -561,7 +558,7 @@ class TestDetectCmd(unittest.TestCase):
                         'matched': 'laravel/framework',
                     }
                 ],
-                files=list(project_path.iterdir())
+                files=list(project_path.iterdir()),
             )
             self.assertEqual(
                 result,
@@ -569,7 +566,7 @@ class TestDetectCmd(unittest.TestCase):
                     'install_command': 'composer install',
                     'build_command': None,
                     'start_command': 'php artisan serve --host=0.0.0.0 --port=8000',
-                }
+                },
             )
 
     def test_does_not_guess_symfony_start_command(self):
@@ -577,14 +574,14 @@ class TestDetectCmd(unittest.TestCase):
             project_path = Path(temp_dir)
             composer_json_path = project_path / 'composer.json'
             composer_json_path.write_text(
-                '''
+                """
             {
                 "require": {
                     "symfony/symfony": "^7.0"
                 }
             }
-        '''.strip(),
-                encoding='utf-8'
+        """.strip(),
+                encoding='utf-8',
             )
             (project_path / 'composer.lock').touch()
             bin_path = project_path / 'bin'
@@ -599,7 +596,7 @@ class TestDetectCmd(unittest.TestCase):
                         'matched': 'symfony/symfony',
                     }
                 ],
-                files=list(project_path.iterdir())
+                files=list(project_path.iterdir()),
             )
             self.assertEqual(
                 result,
@@ -607,7 +604,7 @@ class TestDetectCmd(unittest.TestCase):
                     'install_command': 'composer install',
                     'build_command': None,
                     'start_command': None,
-                }
+                },
             )
 
     def test_detects_spring_maven_commands(self):
@@ -616,7 +613,7 @@ class TestDetectCmd(unittest.TestCase):
             pom_xml_path = project_path / 'pom.xml'
             (project_path / 'mvnw').touch()
             pom_xml_path.write_text(
-                '''
+                """
                 <project xmlns="http://maven.apache.org/POM/4.0.0">
                     <modelVersion>4.0.0</modelVersion>
 
@@ -636,7 +633,7 @@ class TestDetectCmd(unittest.TestCase):
                         <finalName>api-service</finalName>
                     </build>
                 </project>
-                '''.strip(),
+                """.strip(),
                 encoding='utf-8',
             )
             result = detect_cmd(
@@ -648,7 +645,7 @@ class TestDetectCmd(unittest.TestCase):
                         'matched': 'spring-boot-starter-web',
                     }
                 ],
-                files=list(project_path.iterdir())
+                files=list(project_path.iterdir()),
             )
             self.assertEqual(
                 result,
@@ -656,7 +653,7 @@ class TestDetectCmd(unittest.TestCase):
                     'install_command': './mvnw dependency:go-offline',
                     'build_command': './mvnw package',
                     'start_command': 'java -jar target/api-service.jar',
-                }
+                },
             )
 
     def test_uses_maven_commands_without_wrapper(self):
@@ -664,7 +661,7 @@ class TestDetectCmd(unittest.TestCase):
             project_path = Path(temp_dir)
             pom_xml_path = project_path / 'pom.xml'
             pom_xml_path.write_text(
-                '''
+                """
                 <project xmlns="http://maven.apache.org/POM/4.0.0">
                     <modelVersion>4.0.0</modelVersion>
                     <groupId>com.example</groupId>
@@ -674,7 +671,7 @@ class TestDetectCmd(unittest.TestCase):
                         <finalName>api-service</finalName>
                     </build>
                 </project>
-                '''.strip(),
+                """.strip(),
                 encoding='utf-8',
             )
 
@@ -705,7 +702,7 @@ class TestDetectCmd(unittest.TestCase):
             pom_xml_path = project_path / 'pom.xml'
             (project_path / 'mvnw').touch()
             pom_xml_path.write_text(
-                '''
+                """
                 <project xmlns="http://maven.apache.org/POM/4.0.0">
                     <modelVersion>4.0.0</modelVersion>
 
@@ -725,7 +722,7 @@ class TestDetectCmd(unittest.TestCase):
                         <finalName>api-service</finalName>
                     </build>
                 </project>
-                '''.strip(),
+                """.strip(),
                 encoding='utf-8',
             )
             result = detect_cmd(
@@ -737,7 +734,7 @@ class TestDetectCmd(unittest.TestCase):
                         'matched': 'spring-boot-starter-web',
                     }
                 ],
-                files=list(project_path.iterdir())
+                files=list(project_path.iterdir()),
             )
             self.assertEqual(
                 result,
@@ -745,7 +742,7 @@ class TestDetectCmd(unittest.TestCase):
                     'install_command': './mvnw dependency:go-offline',
                     'build_command': './mvnw package',
                     'start_command': None,
-                }
+                },
             )
 
     def test_detects_aspnet_commands(self):
@@ -753,21 +750,17 @@ class TestDetectCmd(unittest.TestCase):
             project_path = Path(temp_dir)
             backend_path = project_path / 'Backend.csproj'
             backend_path.write_text(
-                '''<Project Sdk="Microsoft.NET.Sdk.Web">
+                """<Project Sdk="Microsoft.NET.Sdk.Web">
                 <PropertyGroup>
                     <TargetFramework>net8.0</TargetFramework>
                 </PropertyGroup>
-                </Project>'''.strip(),
-                encoding='utf-8'
+                </Project>""".strip(),
+                encoding='utf-8',
             )
             result = detect_cmd(
                 lang='C#',
-                frameworks=[
-                    {
-                        'name': 'ASP.NET'
-                    }
-                ],
-                files=list(project_path.iterdir())
+                frameworks=[{'name': 'ASP.NET'}],
+                files=list(project_path.iterdir()),
             )
             self.assertEqual(
                 result,
@@ -775,7 +768,7 @@ class TestDetectCmd(unittest.TestCase):
                     'install_command': 'dotnet restore',
                     'build_command': 'dotnet publish -c Release -o out',
                     'start_command': 'dotnet out/Backend.dll',
-                }
+                },
             )
 
     def test_detects_blazor_commands(self):
@@ -783,21 +776,17 @@ class TestDetectCmd(unittest.TestCase):
             project_path = Path(temp_dir)
             backend_path = project_path / 'Frontend.csproj'
             backend_path.write_text(
-                '''<Project Sdk="Microsoft.NET.Sdk.Web">
+                """<Project Sdk="Microsoft.NET.Sdk.Web">
                 <PropertyGroup>
                     <TargetFramework>net8.0</TargetFramework>
                 </PropertyGroup>
-                </Project>'''.strip(),
-                encoding='utf-8'
+                </Project>""".strip(),
+                encoding='utf-8',
             )
             result = detect_cmd(
                 lang='C#',
-                frameworks=[
-                    {
-                        'name': 'Blazor'
-                    }
-                ],
-                files=list(project_path.iterdir())
+                frameworks=[{'name': 'Blazor'}],
+                files=list(project_path.iterdir()),
             )
             self.assertEqual(
                 result,
@@ -805,7 +794,7 @@ class TestDetectCmd(unittest.TestCase):
                     'install_command': 'dotnet restore',
                     'build_command': 'dotnet publish -c Release -o out',
                     'start_command': 'dotnet out/Frontend.dll',
-                }
+                },
             )
 
     def test_detects_cpp_cmake_commands(self):
@@ -813,15 +802,15 @@ class TestDetectCmd(unittest.TestCase):
             project_path = Path(temp_dir)
             cmake_path = project_path / 'CMakeLists.txt'
             cmake_path.write_text(
-                '''
+                """
                     cmake_minimum_required(VERSION 3.20)
                     project(MyApp)
 
                     find_package(Qt6 REQUIRED COMPONENTS Widgets)
                     add_executable(my_app main.cpp)
                     target_link_libraries(my_app PRIVATE Qt6::Widgets)
-                '''.strip(),
-                encoding='utf-8'
+                """.strip(),
+                encoding='utf-8',
             )
             result = detect_cmd(
                 lang='C++',
@@ -832,7 +821,7 @@ class TestDetectCmd(unittest.TestCase):
                         'matched': 'qt',
                     }
                 ],
-                files=list(project_path.iterdir())
+                files=list(project_path.iterdir()),
             )
             self.assertEqual(
                 result,
@@ -840,7 +829,7 @@ class TestDetectCmd(unittest.TestCase):
                     'install_command': None,
                     'build_command': 'cmake -S . -B build && cmake --build build',
                     'start_command': './build/my_app',
-                }
+                },
             )
 
     def test_detects_cpp_boost_commands(self):
@@ -848,15 +837,15 @@ class TestDetectCmd(unittest.TestCase):
             project_path = Path(temp_dir)
             boost_path = project_path / 'CMakeLists.txt'
             boost_path.write_text(
-                '''
+                """
                    cmake_minimum_required(VERSION 3.20)
                     project(BoostApp)
 
                     find_package(Boost REQUIRED)
                     add_executable(boost_app main.cpp)
                     target_link_libraries(boost_app PRIVATE Boost::boost)
-                '''.strip(),
-                encoding='utf-8'
+                """.strip(),
+                encoding='utf-8',
             )
             result = detect_cmd(
                 lang='C++',
@@ -867,7 +856,7 @@ class TestDetectCmd(unittest.TestCase):
                         'matched': 'boost',
                     }
                 ],
-                files=list(project_path.iterdir())
+                files=list(project_path.iterdir()),
             )
             self.assertEqual(
                 result,
@@ -875,7 +864,7 @@ class TestDetectCmd(unittest.TestCase):
                     'install_command': None,
                     'build_command': 'cmake -S . -B build && cmake --build build',
                     'start_command': './build/boost_app',
-                }
+                },
             )
 
     def test_detects_c_makefile_commands(self):
@@ -883,15 +872,15 @@ class TestDetectCmd(unittest.TestCase):
             project_path = Path(temp_dir)
             make_path = project_path / 'Makefile'
             make_path.write_text(
-                '''
+                """
                    CC = gcc
 
                     all: gtk_app
 
                     gtk_app: main.c
                         $(CC) main.c -o gtk_app $(shell pkg-config --cflags --libs gtk+-3.0)
-                '''.strip(),
-                encoding='utf-8'
+                """.strip(),
+                encoding='utf-8',
             )
             result = detect_cmd(
                 lang='C',
@@ -910,7 +899,7 @@ class TestDetectCmd(unittest.TestCase):
                     'install_command': None,
                     'build_command': 'make',
                     'start_command': './gtk_app',
-                }
+                },
             )
 
     def test_does_not_guess_cpp_start_command_without_executable(self):
@@ -918,13 +907,13 @@ class TestDetectCmd(unittest.TestCase):
             project_path = Path(temp_dir)
             cmake_path = project_path / 'CMakeLists.txt'
             cmake_path.write_text(
-                '''
+                """
                    cmake_minimum_required(VERSION 3.20)
                     project(MyLibrary)
 
                     add_library(my_library library.cpp)
-                '''.strip(),
-                encoding='utf-8'
+                """.strip(),
+                encoding='utf-8',
             )
             result = detect_cmd(
                 lang='C++',
@@ -937,7 +926,7 @@ class TestDetectCmd(unittest.TestCase):
                     'install_command': None,
                     'build_command': 'cmake -S . -B build && cmake --build build',
                     'start_command': None,
-                }
+                },
             )
 
     def test_does_not_guess_c_start_command_without_output_name(self):
@@ -945,13 +934,13 @@ class TestDetectCmd(unittest.TestCase):
             project_path = Path(temp_dir)
             make_path = project_path / 'Makefile'
             make_path.write_text(
-                '''
+                """
                    CC = gcc
 
                     all:
                         $(CC) main.c
-                '''.strip(),
-                encoding='utf-8'
+                """.strip(),
+                encoding='utf-8',
             )
             result = detect_cmd(
                 lang='C',
@@ -964,5 +953,5 @@ class TestDetectCmd(unittest.TestCase):
                     'install_command': None,
                     'build_command': 'make',
                     'start_command': None,
-                }
+                },
             )

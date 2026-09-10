@@ -3,7 +3,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from generators.docker.generator import generate_project_dockerfile
+from ci_cd_forge.generators.docker.generator import generate_project_dockerfile
 
 
 class TestDockerfileGenerator(unittest.TestCase):
@@ -26,7 +26,7 @@ class TestDockerfileGenerator(unittest.TestCase):
             }
 
             with patch(
-                'generators.docker.generator.write_dockerignore',
+                'ci_cd_forge.generators.docker.generator.write_dockerignore',
                 side_effect=OSError('write failed'),
             ):
                 with self.assertRaisesRegex(OSError, 'write failed'):
@@ -61,7 +61,7 @@ class TestDockerfileGenerator(unittest.TestCase):
             }
 
             with patch(
-                'generators.docker.generator.write_dockerignore',
+                'ci_cd_forge.generators.docker.generator.write_dockerignore',
                 side_effect=OSError('write failed'),
             ):
                 with self.assertRaisesRegex(OSError, 'write failed'):
@@ -94,13 +94,9 @@ class TestDockerfileGenerator(unittest.TestCase):
                 'language(s)': 'Python',
                 'manifest_file': 'requirements.txt',
                 'commands': {
-                    'install_command': (
-                        'python -m pip install -r requirements.txt'
-                    ),
+                    'install_command': ('python -m pip install -r requirements.txt'),
                     'build_command': None,
-                    'start_command': (
-                        'python manage.py runserver 0.0.0.0:8000'
-                    ),
+                    'start_command': ('python manage.py runserver 0.0.0.0:8000'),
                 },
             }
             expected_path = project_path / 'Dockerfile'
@@ -146,9 +142,7 @@ class TestDockerfileGenerator(unittest.TestCase):
                 'language(s)': 'Python',
                 'manifest_file': 'requirements.txt',
                 'commands': {
-                    'install_command': (
-                        'python -m pip install -r requirements.txt'
-                    ),
+                    'install_command': ('python -m pip install -r requirements.txt'),
                     'build_command': None,
                     'start_command': None,
                 },
@@ -382,9 +376,7 @@ class TestDockerfileGenerator(unittest.TestCase):
                 'commands': {
                     'install_command': 'composer install',
                     'build_command': None,
-                    'start_command': (
-                        'php artisan serve --host=0.0.0.0 --port=8000'
-                    ),
+                    'start_command': ('php artisan serve --host=0.0.0.0 --port=8000'),
                 },
             }
             expected_path = project_path / 'Dockerfile'
@@ -393,8 +385,8 @@ class TestDockerfileGenerator(unittest.TestCase):
                 'WORKDIR /app\n'
                 'COPY composer.json .\n'
                 'COPY composer.lock .\n'
-                'RUN composer install\n'
                 'COPY . .\n'
+                'RUN composer install\n'
                 'EXPOSE 8000\n'
                 'CMD ["sh", "-c", '
                 '"php artisan serve --host=0.0.0.0 --port=8000"]\n'
@@ -432,9 +424,7 @@ class TestDockerfileGenerator(unittest.TestCase):
                 'manifest_file': 'CMakeLists.txt',
                 'commands': {
                     'install_command': None,
-                    'build_command': (
-                        'cmake -S . -B build && cmake --build build'
-                    ),
+                    'build_command': ('cmake -S . -B build && cmake --build build'),
                     'start_command': './build/app',
                 },
             }
@@ -628,9 +618,7 @@ class TestDockerfileGenerator(unittest.TestCase):
                 'language(s)': 'Python',
                 'manifest_file': 'requirements.txt',
                 'commands': {
-                    'install_command': (
-                        'python -m pip install -r requirements.txt'
-                    ),
+                    'install_command': ('python -m pip install -r requirements.txt'),
                     'build_command': None,
                     'start_command': 'python main.py',
                 },
@@ -831,9 +819,7 @@ class TestDockerfileGenerator(unittest.TestCase):
                 'manifest_file': 'CMakeLists.txt',
                 'commands': {
                     'install_command': None,
-                    'build_command': (
-                        'cmake -S . -B build && cmake --build build'
-                    ),
+                    'build_command': ('cmake -S . -B build && cmake --build build'),
                     'start_command': './build/app',
                 },
             }

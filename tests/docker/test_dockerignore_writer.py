@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from generators.docker.dockerignore_writer import (
+from ci_cd_forge.generators.docker.dockerignore_writer import (
     DOCKERIGNORE_TEMPLATE,
     write_dockerignore,
 )
@@ -47,3 +47,12 @@ class TestDockerignoreWriter(unittest.TestCase):
                 result.read_text(encoding='utf-8'),
                 DOCKERIGNORE_TEMPLATE,
             )
+
+    def test_bin_not_in_dockerignore(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+
+            dockerignore = write_dockerignore(project_path)
+            dockerignore_text = dockerignore.read_text(encoding='utf-8')
+
+            self.assertNotIn('bin/\n', dockerignore_text)

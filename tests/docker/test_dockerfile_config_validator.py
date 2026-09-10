@@ -1,17 +1,32 @@
 import unittest
 
-from generators.docker.config_validator import validate_dockerfile_config
+from ci_cd_forge.generators.docker.config_validator import validate_dockerfile_config
 
 
 class TestDockerfileConfigValidator(unittest.TestCase):
+    def test_validates_install_after_copy_type(self):
+        config = {
+            'base_image': 'python:3.12-slim',
+            'workdir': '/app',
+        }
+
+        for value in (True, False):
+            with self.subTest(value=value):
+                config['install_after_copy'] = value
+                self.assertIsNone(validate_dockerfile_config(config))
+
+        for value in (None, 'yes', 1, []):
+            with self.subTest(value=value):
+                config['install_after_copy'] = value
+                with self.assertRaisesRegex(ValueError, 'install_after_copy'):
+                    validate_dockerfile_config(config)
+
     def test_accepts_valid_config(self):
         config = {
             'base_image': 'python:3.12-slim',
             'workdir': '/app',
             'dependency_files': ['requirements.txt'],
-            'install_command': (
-                'python -m pip install -r requirements.txt'
-            ),
+            'install_command': ('python -m pip install -r requirements.txt'),
             'build_command': None,
             'start_command': 'python main.py',
             'port': 8000,

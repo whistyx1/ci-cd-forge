@@ -2,7 +2,7 @@ import unittest
 
 import yaml
 
-from generators.compose.compose_renderer import render_compose
+from ci_cd_forge.generators.compose.compose_renderer import render_compose
 
 
 class TestComposeRenderer(unittest.TestCase):
@@ -72,10 +72,7 @@ class TestComposeRenderer(unittest.TestCase):
 
         self.assertEqual(
             result,
-            'services:\n'
-            '  app:\n'
-            '    build:\n'
-            '      context: .\n',
+            'services:\n  app:\n    build:\n      context: .\n',
         )
 
 

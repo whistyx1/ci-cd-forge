@@ -1,7 +1,7 @@
 import unittest
 
-from parse.parse_cmake import parse_cmake
-from parse.parse_makefile import parse_makefile
+from ci_cd_forge.parse.parse_cmake import parse_cmake
+from ci_cd_forge.parse.parse_makefile import parse_makefile
 
 
 class TestBuildParsers(unittest.TestCase):

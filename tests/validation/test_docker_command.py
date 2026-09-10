@@ -1,6 +1,6 @@
 import unittest
 
-from validators.docker_command import validate_docker_command
+from ci_cd_forge.validators.docker_command import validate_docker_command
 
 
 class TestDockerCommandValidation(unittest.TestCase):

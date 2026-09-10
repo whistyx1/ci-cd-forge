@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from generators.docker.recommendation_resolver import (
+from ci_cd_forge.generators.docker.recommendation_resolver import (
     resolve_docker_recommendation,
 )
 
@@ -73,9 +73,7 @@ class TestDockerRecommendationResolver(unittest.TestCase):
                 'strategy': 'multi',
                 'runtime_image': 'debian:bookworm-slim',
                 'artifact_source': '/app/target/release/api-service',
-                'artifact_destination': (
-                    '/app/target/release/api-service'
-                ),
+                'artifact_destination': ('/app/target/release/api-service'),
             },
         )
         self.assertEqual(result['requires_confirmation'], [])
@@ -124,6 +122,19 @@ class TestDockerRecommendationResolver(unittest.TestCase):
                     project_path=Path(temp_dir),
                     strategy='multi',
                 )
+
+    def test_javascript_with_install_pnpm(self):
+        with TemporaryDirectory() as temp_dir:
+            project_path = Path(temp_dir)
+            stack = {
+                'language(s)': 'JavaScript',
+                'commands': {'install_command': 'pnpm install --frozen-lockfile'},
+            }
+            result = resolve_docker_recommendation(
+                stack=stack,
+                project_path=project_path,
+            )
+            self.assertEqual(result['options']['setup_command'], 'corepack enable')
 
 
 if __name__ == '__main__':

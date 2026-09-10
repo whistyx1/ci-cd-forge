@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from generators.docker.service import generate_recommended_dockerfile
+from ci_cd_forge.generators.docker.service import generate_recommended_dockerfile
 
 
 class TestDockerService(unittest.TestCase):
@@ -17,9 +17,7 @@ class TestDockerService(unittest.TestCase):
                 'language(s)': 'Python',
                 'manifest_file': 'requirements.txt',
                 'commands': {
-                    'install_command': (
-                        'python -m pip install -r requirements.txt'
-                    ),
+                    'install_command': ('python -m pip install -r requirements.txt'),
                     'build_command': None,
                     'start_command': 'python main.py',
                 },
@@ -55,13 +53,9 @@ class TestDockerService(unittest.TestCase):
                 'language(s)': 'Python',
                 'manifest_file': 'requirements.txt',
                 'commands': {
-                    'install_command': (
-                        'python -m pip install -r requirements.txt'
-                    ),
+                    'install_command': ('python -m pip install -r requirements.txt'),
                     'build_command': None,
-                    'start_command': (
-                        'python manage.py runserver 0.0.0.0:8000'
-                    ),
+                    'start_command': ('python manage.py runserver 0.0.0.0:8000'),
                 },
             }
 
@@ -135,9 +129,7 @@ class TestDockerService(unittest.TestCase):
                 'language(s)': 'Python',
                 'manifest_file': 'requirements.txt',
                 'commands': {
-                    'install_command': (
-                        'python -m pip install -r requirements.txt'
-                    ),
+                    'install_command': ('python -m pip install -r requirements.txt'),
                     'build_command': None,
                     'start_command': None,
                 },
@@ -165,9 +157,7 @@ class TestDockerService(unittest.TestCase):
                 'language(s)': 'Python',
                 'manifest_file': 'requirements.txt',
                 'commands': {
-                    'install_command': (
-                        'python -m pip install -r requirements.txt'
-                    ),
+                    'install_command': ('python -m pip install -r requirements.txt'),
                     'build_command': None,
                     'start_command': 'python app.py',
                 },

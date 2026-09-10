@@ -1,5 +1,4 @@
-from cli.app import run_cli
-
+from ci_cd_forge.main import main
 
 if __name__ == '__main__':
-    raise SystemExit(run_cli())
+    raise SystemExit(main())

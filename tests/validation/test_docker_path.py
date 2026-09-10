@@ -1,6 +1,6 @@
 import unittest
 
-from validators.docker_path import validate_container_path
+from ci_cd_forge.validators.docker_path import validate_container_path
 
 
 class TestDockerPathValidation(unittest.TestCase):

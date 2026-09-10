@@ -1,6 +1,6 @@
 import unittest
 
-from validators.multistage import validate_multistage_config
+from ci_cd_forge.validators.multistage import validate_multistage_config
 
 
 class TestMultistageValidation(unittest.TestCase):

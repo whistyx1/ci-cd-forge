@@ -1,0 +1,38 @@
+[project]
+name = "ci-cd-forge"
+version = "1.0.0"
+description = "Analyze project stacks and generate DevOps configuration."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "whistyx1" }]
+dependencies = ["PyYAML>=6.0,<7.0"]
+
+[project.optional-dependencies]
+dev = ["ruff>=0.11,<1.0"]
+
+[project.scripts]
+ci-cd-forge = "ci_cd_forge.main:main"
+
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ci_cd_forge*"]
+exclude = ["tests*"]
+namespaces = false
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+extend-exclude = ["build", "dist"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+line-ending = "auto"

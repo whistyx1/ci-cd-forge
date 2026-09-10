@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from generators.docker.dockerfile_writer import write_dockerfile
+from ci_cd_forge.generators.docker.dockerfile_writer import write_dockerfile
 
 
 class TestWritesDockerfile(unittest.TestCase):

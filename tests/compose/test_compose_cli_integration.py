@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from generators.compose.compose_generator import generate_project_compose
+from ci_cd_forge.generators.compose.compose_generator import generate_project_compose
 
 
 def compose_cli_is_available() -> bool:

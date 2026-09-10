@@ -1,7 +1,7 @@
 import unittest
 
-from detect.markers import lang_markers
-from generators.docker.presets import DOCKER_PRESETS
+from ci_cd_forge.detect.markers import lang_markers
+from ci_cd_forge.generators.docker.presets import DOCKER_PRESETS
 
 
 class TestDockerPresets(unittest.TestCase):

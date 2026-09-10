@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from generators.compose.compose_writer import write_compose
+from ci_cd_forge.generators.compose.compose_writer import write_compose
 
 
 class TestComposeWriter(unittest.TestCase):

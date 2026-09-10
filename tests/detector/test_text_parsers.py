@@ -1,8 +1,8 @@
 import unittest
 
-from parse.parse_requirements import parse_requirements
-from parse.parse_gemfile import parse_gemfile
-from parse.parse_go_mod import parse_go_mod
+from ci_cd_forge.parse.parse_gemfile import parse_gemfile
+from ci_cd_forge.parse.parse_go_mod import parse_go_mod
+from ci_cd_forge.parse.parse_requirements import parse_requirements
 
 
 class TestTextParsers(unittest.TestCase):
@@ -29,10 +29,10 @@ class TestTextParsers(unittest.TestCase):
         self.assertEqual(
             result,
             [
-                {"name": "requests", "version": "==2.31.0"},
-                {"name": "pandas", "version": ">=2.0.0"},
-                {"name": "numpy", "version": "~=1.25.2"},
-                {"name": "matplotlib", "version": None},
+                {'name': 'requests', 'version': '==2.31.0'},
+                {'name': 'pandas', 'version': '>=2.0.0'},
+                {'name': 'numpy', 'version': '~=1.25.2'},
+                {'name': 'matplotlib', 'version': None},
             ],
         )
 
@@ -55,12 +55,12 @@ class TestTextParsers(unittest.TestCase):
         self.assertEqual(
             result,
             [
-                {"name": "github.com/gin-gonic/gin", "version": "v1.10.0"},
-                {"name": "github.com/stretchr/testify", "version": "v1.9.0"},
-                {"name": "golang.org/x/crypto", "version": "v0.21.0"},
+                {'name': 'github.com/gin-gonic/gin', 'version': 'v1.10.0'},
+                {'name': 'github.com/stretchr/testify', 'version': 'v1.9.0'},
+                {'name': 'golang.org/x/crypto', 'version': 'v0.21.0'},
                 {
-                    "name": "github.com/whistyx1/film-trecker",
-                    "version": "v1.15.0",
+                    'name': 'github.com/whistyx1/film-trecker',
+                    'version': 'v1.15.0',
                 },
             ],
         )
@@ -75,7 +75,7 @@ class TestTextParsers(unittest.TestCase):
         self.assertEqual(
             result,
             [
-                {"name": "nokogiri", "version": None},
-                {"name": "aws-s3", "version": "~> 1.0"},
+                {'name': 'nokogiri', 'version': None},
+                {'name': 'aws-s3', 'version': '~> 1.0'},
             ],
         )

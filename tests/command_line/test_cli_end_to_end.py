@@ -100,8 +100,7 @@ class TestCliEndToEnd(unittest.TestCase):
             requirements_path = project_path / 'requirements.txt'
             manage_path = project_path / 'manage.py'
             requirements_path.write_text(
-                'Django==5.1.2\n'
-                'requests==2.32.3\n',
+                'Django==5.1.2\nrequests==2.32.3\n',
                 encoding='utf-8',
             )
             manage_path.write_text('', encoding='utf-8')

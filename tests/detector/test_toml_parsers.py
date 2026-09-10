@@ -1,6 +1,6 @@
 import unittest
 
-from parse.parse_cargo_toml import parse_cargo_toml
+from ci_cd_forge.parse.parse_cargo_toml import parse_cargo_toml
 
 
 class TestTomlParser(unittest.TestCase):
@@ -24,10 +24,10 @@ class TestTomlParser(unittest.TestCase):
         self.assertEqual(
             result,
             [
-                {"name": "serde", "version": "1.0"},
-                {"name": "tokio", "version": "1.0"},
-                {"name": "criterion", "version": "0.5"},
-                {"name": "locallib", "version": None},
+                {'name': 'serde', 'version': '1.0'},
+                {'name': 'tokio', 'version': '1.0'},
+                {'name': 'criterion', 'version': '0.5'},
+                {'name': 'locallib', 'version': None},
             ],
         )
 
