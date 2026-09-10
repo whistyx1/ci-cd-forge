@@ -44,9 +44,7 @@ class TestCliApp(unittest.TestCase):
             'ci_cd_forge.cli.app._review_project_docker_options',
             side_effect=self._docker_options,
         )
-        self.review_docker_options_mock = (
-            self.docker_options_patcher.start()
-        )
+        self.review_docker_options_mock = self.docker_options_patcher.start()
         self.addCleanup(self.docker_options_patcher.stop)
 
         self.verify_images_patcher = patch(
@@ -101,7 +99,7 @@ class TestCliApp(unittest.TestCase):
     @staticmethod
     def _docker_options(stack, project_path, strategy):
         return {
-            'base_image': f"{stack['language(s)'].lower()}:test",
+            'base_image': f'{stack["language(s)"].lower()}:test',
             'workdir': '/app',
             'port': stack.get('port'),
             'strategy': strategy,
@@ -463,9 +461,7 @@ class TestCliApp(unittest.TestCase):
 
         self.assertEqual(result, 3000)
         self.assertEqual(
-            stdout.getvalue().count(
-                'Port must be a number from 1 to 65535.'
-            ),
+            stdout.getvalue().count('Port must be a number from 1 to 65535.'),
             3,
         )
 

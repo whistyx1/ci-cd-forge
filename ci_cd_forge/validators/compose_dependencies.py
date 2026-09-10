@@ -5,8 +5,7 @@ def validate_compose_dependencies(
     for service_name, service_config in services.items():
         if not isinstance(service_config, dict):
             raise ValueError(
-                f'Compose service {service_name} config '
-                'must be a dictionary'
+                f'Compose service {service_name} config must be a dictionary'
             )
         depends_on = service_config.get('depends_on')
         if depends_on is None:
@@ -14,8 +13,7 @@ def validate_compose_dependencies(
             continue
         if not isinstance(depends_on, list):
             raise ValueError(
-                f'Compose service {service_name} depends_on '
-                'must be a list'
+                f'Compose service {service_name} depends_on must be a list'
             )
         for dependency in depends_on:
             if (
@@ -24,8 +22,7 @@ def validate_compose_dependencies(
                 or dependency != dependency.strip()
             ):
                 raise ValueError(
-                    f'Compose service {service_name} '
-                    'has an invalid dependency'
+                    f'Compose service {service_name} has an invalid dependency'
                 )
             if dependency == service_name:
                 raise ValueError(
@@ -38,8 +35,7 @@ def validate_compose_dependencies(
                 )
         if len(depends_on) != len(set(depends_on)):
             raise ValueError(
-                f'Compose service {service_name} '
-                'has duplicate dependencies'
+                f'Compose service {service_name} has duplicate dependencies'
             )
         graph[service_name] = depends_on
 
@@ -48,9 +44,7 @@ def validate_compose_dependencies(
 
     def visit(service_name: str) -> None:
         if service_name in visiting:
-            raise ValueError(
-                'Compose dependencies contain a dependency cycle'
-            )
+            raise ValueError('Compose dependencies contain a dependency cycle')
 
         if service_name in visited:
             return

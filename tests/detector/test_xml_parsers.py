@@ -1,7 +1,7 @@
 import unittest
 
-from ci_cd_forge.parse.parse_pom_xml import parse_pom_xml
 from ci_cd_forge.parse.parse_csproj import parse_csproj
+from ci_cd_forge.parse.parse_pom_xml import parse_pom_xml
 
 
 class TestXmlParsers(unittest.TestCase):
@@ -46,8 +46,8 @@ class TestXmlParsers(unittest.TestCase):
         self.assertEqual(
             result,
             [
-                {"name": "guava", "version": "33.4.0-jre"},
-                {"name": "junit-jupiter-api", "version": "5.11.0"},
+                {'name': 'guava', 'version': '33.4.0-jre'},
+                {'name': 'junit-jupiter-api', 'version': '5.11.0'},
                 {'name': 'internal-library', 'version': None},
             ],
         )
@@ -76,7 +76,7 @@ class TestXmlParsers(unittest.TestCase):
         self.assertEqual(
             result,
             [
-                {"name": "newtonsoft.json", "version": "13.0.3"},
-                {"name": "serilog", "version": "4.0.0"},
+                {'name': 'newtonsoft.json', 'version': '13.0.3'},
+                {'name': 'serilog', 'version': '4.0.0'},
             ],
         )

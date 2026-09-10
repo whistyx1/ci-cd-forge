@@ -3,12 +3,14 @@ import re
 import tomllib
 import xml.etree.ElementTree as ET
 
+
 def _empty_commands():
     return {
         'install_command': None,
         'build_command': None,
         'start_command': None,
     }
+
 
 def _detect_javascript_commands(files, file_names):
     # JavaScript commands come from the package manager and declared scripts.
@@ -75,6 +77,7 @@ def _detect_javascript_commands(files, file_names):
         'start_command': commands['start'] if 'start' in scripts else None,
     }
 
+
 def _detect_python_commands(frameworks, file_names):
     # Python projects are installed from requirements and started by known files.
     install_command = None
@@ -114,6 +117,7 @@ def _detect_python_commands(frameworks, file_names):
         'start_command': start_command,
     }
 
+
 def _detect_go_commands(files, file_names):
     if 'go.mod' not in file_names:
         return _empty_commands()
@@ -137,6 +141,7 @@ def _detect_go_commands(files, file_names):
                     'start_command': './app',
                 }
     return _empty_commands()
+
 
 def _detect_rust_commands(files, file_names):
     cargo_path = None
@@ -168,9 +173,9 @@ def _detect_rust_commands(files, file_names):
         'start_command': f'./target/release/{package_name}',
     }
 
+
 def _detect_ruby_commands(frameworks, files, file_names):
     install_command = None
-    build_command = None
     start_command = None
     gemfile_path = None
     entry_files = ['app.rb', 'main.rb', 'run.rb']
@@ -199,6 +204,7 @@ def _detect_ruby_commands(frameworks, files, file_names):
         'start_command': start_command,
     }
 
+
 def _detect_php_commands(frameworks, file_names):
     install_command = None
     build_command = None
@@ -216,6 +222,7 @@ def _detect_php_commands(frameworks, file_names):
         'build_command': build_command,
         'start_command': start_command,
     }
+
 
 def _detect_java_commands(frameworks, files, file_names):
     install_command = None
@@ -247,10 +254,7 @@ def _detect_java_commands(frameworks, files, file_names):
         'm:build/m:finalName',
         namespaces=namespace,
     )
-    is_spring = any(
-        framework['name'] == 'Spring'
-        for framework in frameworks
-    )
+    is_spring = any(framework['name'] == 'Spring' for framework in frameworks)
     if is_spring and final_name:
         start_command = f'java -jar target/{final_name.strip()}.jar'
     return {
@@ -258,6 +262,7 @@ def _detect_java_commands(frameworks, files, file_names):
         'build_command': build_command,
         'start_command': start_command,
     }
+
 
 def _detect_csharp_commands(files):
     install_command = None
@@ -281,6 +286,7 @@ def _detect_csharp_commands(files):
         'build_command': build_command,
         'start_command': start_command,
     }
+
 
 def _detect_cpp_commands(files, file_names):
     install_command = None
@@ -307,6 +313,7 @@ def _detect_cpp_commands(files, file_names):
         'build_command': build_command,
         'start_command': start_command,
     }
+
 
 def _detect_c_commands(files, file_names):
     install_command = None
@@ -350,16 +357,11 @@ def _detect_cmd(lang, frameworks, files):
 
     if lang == 'Ruby':
         return _detect_ruby_commands(
-            frameworks=frameworks,
-            files=files,
-            file_names=file_names
+            frameworks=frameworks, files=files, file_names=file_names
         )
 
     if lang == 'PHP':
-        return _detect_php_commands(
-            frameworks=frameworks,
-            file_names=file_names
-        )
+        return _detect_php_commands(frameworks=frameworks, file_names=file_names)
 
     if lang == 'Java':
         return _detect_java_commands(

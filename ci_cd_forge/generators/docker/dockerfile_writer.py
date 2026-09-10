@@ -5,8 +5,7 @@ def find_dockerfile_case_variants(project_path: Path) -> list[Path]:
     return [
         path
         for path in project_path.iterdir()
-        if path.name.lower() == 'dockerfile'
-        and path.name != 'Dockerfile'
+        if path.name.lower() == 'dockerfile' and path.name != 'Dockerfile'
     ]
 
 

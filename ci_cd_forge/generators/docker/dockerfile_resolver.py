@@ -52,7 +52,7 @@ def resolve_dockerfile_config(
     multistage_fields = {
         'runtime_image': runtime_image,
         'artifact_destination': artifact_destination,
-        'artifact_source': artifact_source
+        'artifact_source': artifact_source,
     }
     for field, value in multistage_fields.items():
         if value is not None:

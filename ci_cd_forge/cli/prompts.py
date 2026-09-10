@@ -32,10 +32,7 @@ def choose_strategy(language: str) -> Literal['single', 'multi']:
 def choose_strategies(
     stacks: list[dict],
 ) -> dict[str, Literal['single', 'multi']]:
-    return {
-        stack['path']: choose_strategy(stack['language(s)'])
-        for stack in stacks
-    }
+    return {stack['path']: choose_strategy(stack['language(s)']) for stack in stacks}
 
 
 def choose_projects(stacks: list[dict]) -> list[dict]:
@@ -43,9 +40,11 @@ def choose_projects(stacks: list[dict]) -> list[dict]:
         return stacks
 
     while True:
-        response = input(
-            "Select projects by number (for example 1,2) or 'all': "
-        ).strip().lower()
+        response = (
+            input("Select projects by number (for example 1,2) or 'all': ")
+            .strip()
+            .lower()
+        )
 
         if response == 'all':
             return stacks
@@ -72,8 +71,8 @@ def choose_projects(stacks: list[dict]) -> list[dict]:
 
 
 def ask_start_command(stack: dict) -> str | None:
-    print(f"Language: {stack['language(s)']}")
-    print(f"Path: {stack['path']}")
+    print(f'Language: {stack["language(s)"]}')
+    print(f'Path: {stack["path"]}')
     start_command = input('Enter start command: ').strip()
     if not start_command:
         return None
@@ -81,13 +80,11 @@ def ask_start_command(stack: dict) -> str | None:
 
 
 def ask_port(stack: dict) -> int | None:
-    print(f"Language: {stack['language(s)']}")
-    print(f"Path: {stack['path']}")
+    print(f'Language: {stack["language(s)"]}')
+    print(f'Path: {stack["path"]}')
 
     while True:
-        response = input(
-            'Enter application port (leave empty for none): '
-        ).strip()
+        response = input('Enter application port (leave empty for none): ').strip()
 
         if not response:
             return None
@@ -127,7 +124,7 @@ def confirm_multistage_options(
         if field not in supported_fields:
             continue
 
-        prompt = f"Enter {field.replace('_', ' ')}"
+        prompt = f'Enter {field.replace("_", " ")}'
         stack[field] = ask_required_value(prompt)
 
 
@@ -148,7 +145,7 @@ def review_docker_options(options: dict) -> dict:
             print('Unknown or non-editable Docker option.')
             continue
         new_value = ask_required_value(
-            f"Enter new value for {user_option.replace('_', ' ')}"
+            f'Enter new value for {user_option.replace("_", " ")}'
         )
         reviewed_options[user_option] = new_value
         print(f'Updated {user_option}: {new_value}')

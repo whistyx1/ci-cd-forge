@@ -26,9 +26,7 @@ class TestDockerfileConfigValidator(unittest.TestCase):
             'base_image': 'python:3.12-slim',
             'workdir': '/app',
             'dependency_files': ['requirements.txt'],
-            'install_command': (
-                'python -m pip install -r requirements.txt'
-            ),
+            'install_command': ('python -m pip install -r requirements.txt'),
             'build_command': None,
             'start_command': 'python main.py',
             'port': 8000,

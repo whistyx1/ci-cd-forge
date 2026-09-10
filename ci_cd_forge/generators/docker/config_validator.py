@@ -71,8 +71,7 @@ def validate_dockerfile_config(config: DockerfileConfig) -> None:
                 absolute=False,
             )
 
-    if (
-        'install_after_copy' in config
-        and not isinstance(config['install_after_copy'], bool)
+    if 'install_after_copy' in config and not isinstance(
+        config['install_after_copy'], bool
     ):
         raise ValueError('install_after_copy must be a boolean')

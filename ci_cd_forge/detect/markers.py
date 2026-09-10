@@ -26,20 +26,43 @@ manifest_files = {
 
 framework_markers = {
     'Python': {
-        'Django': ['manage.py', 'django',],
-        'Flask': ['flask',],
-        'FastAPI': ['fastapi',],
-        'Pyramid': ['pyramid',],
-        'Tornado': ['tornado',],
+        'Django': [
+            'manage.py',
+            'django',
+        ],
+        'Flask': [
+            'flask',
+        ],
+        'FastAPI': [
+            'fastapi',
+        ],
+        'Pyramid': [
+            'pyramid',
+        ],
+        'Tornado': [
+            'tornado',
+        ],
     },
     'JavaScript': {
-        'React': ['react',],
-        'Angular': ['angular', '@angular',],
-        'Vue': ['vue',],
-        'Express': ['express',],
-        'Next.js': ['next',],
-        'Nest.js': ['@nestjs',],
-   
+        'React': [
+            'react',
+        ],
+        'Angular': [
+            'angular',
+            '@angular',
+        ],
+        'Vue': [
+            'vue',
+        ],
+        'Express': [
+            'express',
+        ],
+        'Next.js': [
+            'next',
+        ],
+        'Nest.js': [
+            '@nestjs',
+        ],
     },
     'Java': {
         'Spring': ['spring-boot-starter-web', 'spring-boot-starter'],
@@ -47,30 +70,56 @@ framework_markers = {
     },
     'C#': {
         'ASP.NET': ['microsoft.aspnetcore.mvc', 'microsoft.aspnetcore.app'],
-        'Blazor': ['microsoft.aspnetcore.components.webassembly', 'microsoft.aspnetcore.blazor'],
+        'Blazor': [
+            'microsoft.aspnetcore.components.webassembly',
+            'microsoft.aspnetcore.blazor',
+        ],
     },
     'C++': {
         'Qt': ['qt6', 'qt5', '.pro'],
         'Boost': ['boost'],
     },
     'PHP': {
-        'Laravel': ['laravel/framework', 'artisan',],
-        'Symfony': ['symfony/symfony',],
+        'Laravel': [
+            'laravel/framework',
+            'artisan',
+        ],
+        'Symfony': [
+            'symfony/symfony',
+        ],
     },
     'Go': {
-        'Gin': ['github.com/gin-gonic/gin',],
-        'Echo': ['github.com/labstack/echo',],
-        'Fiber': ['github.com/gofiber/fiber',],
-        'Chi': ['github.com/go-chi/chi',],
+        'Gin': [
+            'github.com/gin-gonic/gin',
+        ],
+        'Echo': [
+            'github.com/labstack/echo',
+        ],
+        'Fiber': [
+            'github.com/gofiber/fiber',
+        ],
+        'Chi': [
+            'github.com/go-chi/chi',
+        ],
     },
     'Rust': {
-        'Rocket': ['rocket',],
-        'Actix': ['actix-web',],
-        'Axum': ['axum',],
+        'Rocket': [
+            'rocket',
+        ],
+        'Actix': [
+            'actix-web',
+        ],
+        'Axum': [
+            'axum',
+        ],
     },
     'Ruby': {
-        'Rails': ['rails',],
-        'Sinatra': ['sinatra',],
+        'Rails': [
+            'rails',
+        ],
+        'Sinatra': [
+            'sinatra',
+        ],
     },
     'C': {
         'GTK': ['gtk-3', 'gtk-x11-2.0'],

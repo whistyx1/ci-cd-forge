@@ -3,7 +3,6 @@ from pathlib import Path
 
 from ci_cd_forge.generators.compose.compose_config import ComposeConfig
 
-
 INVALID_SERVICE_NAME_CHARACTERS = re.compile(r'[^A-Za-z0-9_.-]+')
 
 

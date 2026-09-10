@@ -65,9 +65,7 @@ def _verify_docker_option_images(
             continue
 
         if not docker_image_exists(image):
-            raise ValueError(
-                f'Docker image is not available: {image}'
-            )
+            raise ValueError(f'Docker image is not available: {image}')
 
 
 def _verify_docker_images_if_requested(
@@ -131,11 +129,7 @@ def run_cli() -> int:
     display_stacks(stacks)
     stacks = choose_projects(stacks)
 
-    errors = [
-        error
-        for stack in stacks
-        for error in stack.get('errors', [])
-    ]
+    errors = [error for stack in stacks for error in stack.get('errors', [])]
     if errors:
         display_errors(errors)
         return 1
@@ -165,9 +159,7 @@ def run_cli() -> int:
 
     output_paths = get_output_paths(stacks, project_path)
     existing_paths = [
-        output_path
-        for output_path in output_paths
-        if output_path.exists()
+        output_path for output_path in output_paths if output_path.exists()
     ]
 
     force = False
@@ -223,17 +215,13 @@ def run_cli() -> int:
                         project_path=stack_project_path,
                     )
 
-                project_docker_options[stack_path] = (
-                    _review_project_docker_options(
-                        stack=project_stack,
-                        project_path=stack_project_path,
-                        strategy=strategy,
-                    )
+                project_docker_options[stack_path] = _review_project_docker_options(
+                    stack=project_stack,
+                    project_path=stack_project_path,
+                    strategy=strategy,
                 )
 
-            _verify_docker_images_if_requested(
-                list(project_docker_options.values())
-            )
+            _verify_docker_images_if_requested(list(project_docker_options.values()))
 
             generate_recommended_compose(
                 root_path=project_path,

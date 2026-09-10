@@ -22,14 +22,10 @@ def validate_multistage_config(
     if strategy == 'single':
         for field in multi_stage_fields:
             if config.get(field) is not None:
-                raise ValueError(
-                    f'{field} is only allowed for multi-stage strategy.'
-                )
+                raise ValueError(f'{field} is only allowed for multi-stage strategy.')
         return
 
     for field in required_fields:
         value = config.get(field)
         if not isinstance(value, str) or not value.strip():
-            raise ValueError(
-                f'{field} is required for multi-stage strategy.'
-            )
+            raise ValueError(f'{field} is required for multi-stage strategy.')

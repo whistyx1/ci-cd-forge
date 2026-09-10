@@ -27,7 +27,7 @@ def parse_go_mod(content: str) -> list[Dependency]:
                 )
                 continue
         if line.startswith('require '):
-            parts = line[len('require '):].strip().split()
+            parts = line[len('require ') :].strip().split()
             if parts:
                 name = parts[0].lower()
                 version = parts[1] if len(parts) > 1 else None

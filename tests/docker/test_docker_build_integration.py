@@ -7,7 +7,6 @@ from tempfile import TemporaryDirectory
 from ci_cd_forge.detect.stack import create_stack
 from ci_cd_forge.generators.docker.service import generate_recommended_dockerfile
 
-
 FIXTURES_PATH = Path(__file__).resolve().parents[1] / 'fixtures'
 
 

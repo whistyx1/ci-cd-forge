@@ -6,7 +6,7 @@ from ci_cd_forge.parse.dependency import Dependency
 def parse_cargo_toml(content: str) -> list[Dependency]:
     data = tomllib.loads(content)
     cargo_packages = []
-    for section_name in ("dependencies", "dev-dependencies"):
+    for section_name in ('dependencies', 'dev-dependencies'):
         section = data.get(section_name, {})
 
         if not isinstance(section, dict):
@@ -15,13 +15,13 @@ def parse_cargo_toml(content: str) -> list[Dependency]:
             if isinstance(config, str):
                 version = config
             elif isinstance(config, dict):
-                version = config.get("version")
+                version = config.get('version')
             else:
                 version = None
             cargo_packages.append(
                 {
-                    "name": str(name).lower(),
-                    "version": version,
+                    'name': str(name).lower(),
+                    'version': version,
                 },
             )
 

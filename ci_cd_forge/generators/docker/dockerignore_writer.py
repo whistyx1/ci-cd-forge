@@ -1,7 +1,6 @@
 from pathlib import Path
 
-
-DOCKERIGNORE_TEMPLATE = '''.git
+DOCKERIGNORE_TEMPLATE = """.git
 .venv
 venv
 __pycache__/
@@ -17,7 +16,7 @@ target/
 obj/
 .env
 .env.*
-'''
+"""
 
 
 def write_dockerignore(

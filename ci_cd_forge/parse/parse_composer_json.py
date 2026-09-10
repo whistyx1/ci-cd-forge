@@ -17,16 +17,22 @@ def parse_composer_json(content: str) -> list[Dependency]:
     if not isinstance(requires_dev, dict):
         raise ValueError('composer.json require-dev must be a dictionary.')
 
-    json_packages.extend([
-        {
-            "name": str(name).lower(),
-            "version": version,
-        }
-        for name, version in requires.items()])
-    json_packages.extend([
-        {
-            "name": str(name).lower(),
-            "version": version,
-        }
-        for name, version in requires_dev.items()])
+    json_packages.extend(
+        [
+            {
+                'name': str(name).lower(),
+                'version': version,
+            }
+            for name, version in requires.items()
+        ]
+    )
+    json_packages.extend(
+        [
+            {
+                'name': str(name).lower(),
+                'version': version,
+            }
+            for name, version in requires_dev.items()
+        ]
+    )
     return json_packages

@@ -95,15 +95,13 @@ def resolve_docker_recommendation(
         )
 
     if artifact_source is None:
-        artifact_source = multistage[
-            'artifact_source_template'
-        ].format(project_name=project_name)
+        artifact_source = multistage['artifact_source_template'].format(
+            project_name=project_name
+        )
         requires_confirmation.append('artifact_source')
 
-    artifact_destination = (
-        multistage['artifact_destination_template'].format(
-            project_name=project_name,
-        )
+    artifact_destination = multistage['artifact_destination_template'].format(
+        project_name=project_name,
     )
     if '{project_name}' in multistage['artifact_destination_template']:
         artifact_destination = artifact_source
@@ -178,10 +176,7 @@ def _detect_project_name(
 
         if language == 'C#':
             manifest_file = stack.get('manifest_file')
-            if (
-                isinstance(manifest_file, str)
-                and manifest_file.endswith('.csproj')
-            ):
+            if isinstance(manifest_file, str) and manifest_file.endswith('.csproj'):
                 return Path(manifest_file).stem
 
         if language == 'C++':

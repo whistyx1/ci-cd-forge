@@ -3,7 +3,10 @@ import unittest
 from unittest.mock import patch
 
 from ci_cd_forge.generators.docker.config_validator import validate_dockerfile_config
-from ci_cd_forge.validators.docker_image import docker_image_exists, validate_docker_image
+from ci_cd_forge.validators.docker_image import (
+    docker_image_exists,
+    validate_docker_image,
+)
 
 
 class TestDockerImageValidation(unittest.TestCase):

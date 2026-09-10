@@ -72,10 +72,7 @@ class TestComposeRenderer(unittest.TestCase):
 
         self.assertEqual(
             result,
-            'services:\n'
-            '  app:\n'
-            '    build:\n'
-            '      context: .\n',
+            'services:\n  app:\n    build:\n      context: .\n',
         )
 
 

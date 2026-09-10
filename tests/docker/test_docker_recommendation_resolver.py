@@ -73,9 +73,7 @@ class TestDockerRecommendationResolver(unittest.TestCase):
                 'strategy': 'multi',
                 'runtime_image': 'debian:bookworm-slim',
                 'artifact_source': '/app/target/release/api-service',
-                'artifact_destination': (
-                    '/app/target/release/api-service'
-                ),
+                'artifact_destination': ('/app/target/release/api-service'),
             },
         )
         self.assertEqual(result['requires_confirmation'], [])

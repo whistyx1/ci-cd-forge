@@ -25,10 +25,7 @@ class TestDockerfileRenderer(unittest.TestCase):
                 'port': 8000,
             }
         )
-        self.assertEqual(
-            result,
-            expected
-        )
+        self.assertEqual(result, expected)
 
     def test_renders_node_dockerfile_with_build_command(self):
         expected = (
@@ -53,10 +50,7 @@ class TestDockerfileRenderer(unittest.TestCase):
                 'port': 3000,
             }
         )
-        self.assertEqual(
-            result,
-            expected
-        )
+        self.assertEqual(result, expected)
 
     def test_renders_setup_command_before_dependency_files(self):
         setup_command = (
@@ -81,9 +75,7 @@ class TestDockerfileRenderer(unittest.TestCase):
                 'setup_command': setup_command,
                 'dependency_files': ['CMakeLists.txt'],
                 'install_command': None,
-                'build_command': (
-                    'cmake -S . -B build && cmake --build build'
-                ),
+                'build_command': ('cmake -S . -B build && cmake --build build'),
                 'start_command': './build/app',
                 'port': None,
             },
@@ -127,21 +119,14 @@ class TestDockerfileRenderer(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def test_skips_missing_optional_instructions(self):
-        expected = (
-            'FROM alpine:3.22\n'
-            'WORKDIR /app\n'
-            'COPY . .\n'
-        )
+        expected = 'FROM alpine:3.22\nWORKDIR /app\nCOPY . .\n'
         result = generate_dockerfile(
             config={
                 'base_image': 'alpine:3.22',
                 'workdir': '/app',
             }
         )
-        self.assertEqual(
-            result,
-            expected
-        )
+        self.assertEqual(result, expected)
 
     def test_invalid_configs(self):
         invalid_configs = [

@@ -33,9 +33,7 @@ def generate_recommended_dockerfile(
             strategy=strategy,
         )
         if recommendation['requires_confirmation']:
-            unconfirmed_fields = ', '.join(
-                recommendation['requires_confirmation']
-            )
+            unconfirmed_fields = ', '.join(recommendation['requires_confirmation'])
             raise ValueError(
                 f'The following fields require confirmation: {unconfirmed_fields}.'
             )

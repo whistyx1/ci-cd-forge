@@ -18,9 +18,7 @@ def get_output_paths(
     for stack in stacks:
         project_path = resolve_project_path(stack, root_path)
         case_variants = (
-            find_dockerfile_case_variants(project_path)
-            if project_path.is_dir()
-            else []
+            find_dockerfile_case_variants(project_path) if project_path.is_dir() else []
         )
         output_paths.extend(
             [

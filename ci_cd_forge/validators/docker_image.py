@@ -1,7 +1,6 @@
 import re
 import subprocess
 
-
 _NAME_COMPONENT = r'[a-z0-9]+(?:(?:[._]|__|[-]+)[a-z0-9]+)*'
 _REGISTRY = r'(?:localhost|[a-z0-9]+(?:[.-][a-z0-9]+)*)(?::[0-9]{1,5})?'
 _TAG = r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}'
@@ -58,8 +57,7 @@ def docker_image_exists(image: str, timeout: int = 30) -> bool:
             error_message = 'unknown Docker error'
 
         raise RuntimeError(
-            f'Docker image verification failed for {image}: '
-            f'{error_message}'
+            f'Docker image verification failed for {image}: {error_message}'
         )
 
     except FileNotFoundError as error:
@@ -67,6 +65,4 @@ def docker_image_exists(image: str, timeout: int = 30) -> bool:
             'Docker CLI is not installed or is not available in PATH'
         ) from error
     except subprocess.TimeoutExpired as error:
-        raise RuntimeError(
-            f'Docker image check timed out: {image}'
-        ) from error
+        raise RuntimeError(f'Docker image check timed out: {image}') from error

@@ -147,10 +147,24 @@ operation are restored.
 
 ## Development
 
-Install the runtime dependencies:
+Install the project with development tools:
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install -e ".[dev]"
+```
+
+Check linting and formatting:
+
+```bash
+python -m ruff check .
+python -m ruff format --check .
+```
+
+Apply automatic fixes and formatting:
+
+```bash
+python -m ruff check . --fix
+python -m ruff format .
 ```
 
 Run the complete test suite:

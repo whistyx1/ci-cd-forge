@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from ci_cd_forge.detect.markers import manifest_files, framework_markers
+from ci_cd_forge.detect.markers import framework_markers, manifest_files
 from ci_cd_forge.parse.dependency import Dependency
 from ci_cd_forge.parse.parse_cargo_toml import parse_cargo_toml
 from ci_cd_forge.parse.parse_cmake import parse_cmake
@@ -54,9 +54,7 @@ def detect_framework(
                     for m in markers:
                         for dependency in packages:
                             package_name = dependency['name']
-                            if m == package_name or package_name.startswith(
-                                f"{m}/"
-                            ):
+                            if m == package_name or package_name.startswith(f'{m}/'):
                                 matched_value = package_name
                                 is_package_match = True
                                 break

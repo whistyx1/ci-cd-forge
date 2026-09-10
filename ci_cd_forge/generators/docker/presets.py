@@ -33,9 +33,7 @@ DOCKER_PRESETS: dict[str, DockerPreset] = {
         'multistage': {
             'runtime_image': 'eclipse-temurin:21-jre',
             'artifact_source_template': '/app/target/{project_name}.jar',
-            'artifact_destination_template': (
-                '/app/target/{project_name}.jar'
-            ),
+            'artifact_destination_template': ('/app/target/{project_name}.jar'),
         },
     },
     'C#': {
@@ -74,12 +72,8 @@ DOCKER_PRESETS: dict[str, DockerPreset] = {
         'port': None,
         'multistage': {
             'runtime_image': 'debian:bookworm-slim',
-            'artifact_source_template': (
-                '/app/target/release/{project_name}'
-            ),
-            'artifact_destination_template': (
-                '/app/target/release/{project_name}'
-            ),
+            'artifact_source_template': ('/app/target/release/{project_name}'),
+            'artifact_destination_template': ('/app/target/release/{project_name}'),
         },
     },
     'C++': {

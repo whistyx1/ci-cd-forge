@@ -5,7 +5,6 @@ from ci_cd_forge.validators.compose_dependencies import validate_compose_depende
 from ci_cd_forge.validators.compose_environment import validate_compose_environment
 from ci_cd_forge.validators.docker_path import validate_container_path
 
-
 SERVICE_NAME_PATTERN = re.compile(r'^[A-Za-z0-9][A-Za-z0-9_.-]*$')
 
 
@@ -23,8 +22,7 @@ def validate_compose(config: ComposeConfig) -> None:
         _validate_service_name(service_name)
         if not isinstance(service_config, dict):
             raise ValueError(
-                f'Compose service config for {service_name} '
-                'must be a dictionary'
+                f'Compose service config for {service_name} must be a dictionary'
             )
 
         _validate_relative_path(
@@ -82,18 +80,14 @@ def _validate_relative_path(
             absolute=False,
         )
     except ValueError as error:
-        raise ValueError(
-            f'Compose service {service_name}: {error}'
-        ) from error
+        raise ValueError(f'Compose service {service_name}: {error}') from error
 
 
 def _validate_ports(service_name: str, ports: object) -> set[int]:
     if ports is None:
         return set()
     if not isinstance(ports, list):
-        raise ValueError(
-            f'Compose service {service_name} has an invalid ports value'
-        )
+        raise ValueError(f'Compose service {service_name} has an invalid ports value')
 
     host_ports = set()
     for port_mapping in ports:

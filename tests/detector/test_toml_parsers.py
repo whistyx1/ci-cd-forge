@@ -24,10 +24,10 @@ class TestTomlParser(unittest.TestCase):
         self.assertEqual(
             result,
             [
-                {"name": "serde", "version": "1.0"},
-                {"name": "tokio", "version": "1.0"},
-                {"name": "criterion", "version": "0.5"},
-                {"name": "locallib", "version": None},
+                {'name': 'serde', 'version': '1.0'},
+                {'name': 'tokio', 'version': '1.0'},
+                {'name': 'criterion', 'version': '0.5'},
+                {'name': 'locallib', 'version': None},
             ],
         )
 

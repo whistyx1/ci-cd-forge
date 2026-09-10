@@ -30,10 +30,7 @@ class TestDockerfileResolver(unittest.TestCase):
             workdir='/app',
             port=8000,
         )
-        self.assertEqual(
-            result,
-            expected
-        )
+        self.assertEqual(result, expected)
 
     def test_handles_missing_commands(self):
         stack = {
@@ -56,10 +53,7 @@ class TestDockerfileResolver(unittest.TestCase):
             workdir='/app',
             port=None,
         )
-        self.assertEqual(
-            result,
-            expected
-        )
+        self.assertEqual(result, expected)
 
     def test_resolves_node_dependency_files(self):
         stack = {
@@ -149,9 +143,7 @@ class TestDockerfileResolver(unittest.TestCase):
             'commands': {
                 'install_command': 'composer install',
                 'build_command': None,
-                'start_command': (
-                    'php artisan serve --host=0.0.0.0 --port=8000'
-                ),
+                'start_command': ('php artisan serve --host=0.0.0.0 --port=8000'),
             },
         }
 
