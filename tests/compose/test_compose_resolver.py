@@ -1,6 +1,6 @@
 import unittest
 
-from generators.compose.compose_resolver import resolve_compose_config
+from ci_cd_forge.generators.compose.compose_resolver import resolve_compose_config
 
 
 class TestComposeResolver(unittest.TestCase):

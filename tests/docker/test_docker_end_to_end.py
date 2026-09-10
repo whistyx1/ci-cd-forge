@@ -3,8 +3,8 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from detect.stack import create_stack
-from generators.docker.service import generate_recommended_dockerfile
+from ci_cd_forge.detect.stack import create_stack
+from ci_cd_forge.generators.docker.service import generate_recommended_dockerfile
 
 
 class TestDockerEndToEnd(unittest.TestCase):

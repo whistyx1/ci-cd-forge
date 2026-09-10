@@ -4,7 +4,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import call, patch
 
-from generators.compose.compose_service import generate_recommended_compose
+from ci_cd_forge.generators.compose.compose_service import generate_recommended_compose
 
 
 class TestComposeService(unittest.TestCase):
@@ -62,7 +62,7 @@ class TestComposeService(unittest.TestCase):
                 )
 
             with patch(
-                'generators.compose.compose_service.'
+                'ci_cd_forge.generators.compose.compose_service.'
                 'generate_recommended_dockerfile',
                 side_effect=generate_dockerfile,
             ):
@@ -113,7 +113,7 @@ class TestComposeService(unittest.TestCase):
                 )
 
             with patch(
-                'generators.compose.compose_service.'
+                'ci_cd_forge.generators.compose.compose_service.'
                 'generate_recommended_dockerfile',
                 side_effect=generate_dockerfile,
             ):
@@ -151,15 +151,15 @@ class TestComposeService(unittest.TestCase):
             (root_path / 'frontend').mkdir()
 
             with patch(
-                'generators.compose.compose_service.create_stack',
+                'ci_cd_forge.generators.compose.compose_service.create_stack',
                 return_value=stacks,
             ):
                 with patch(
-                    'generators.compose.compose_service.'
+                    'ci_cd_forge.generators.compose.compose_service.'
                     'generate_recommended_dockerfile',
                 ) as generate_dockerfile_mock:
                     with patch(
-                        'generators.compose.compose_service.'
+                        'ci_cd_forge.generators.compose.compose_service.'
                         'generate_project_compose',
                         return_value=compose_path,
                     ):
@@ -225,11 +225,11 @@ class TestComposeService(unittest.TestCase):
             (root_path / 'frontend').mkdir()
 
             with patch(
-                'generators.compose.compose_service.'
+                'ci_cd_forge.generators.compose.compose_service.'
                 'generate_recommended_dockerfile',
             ) as generate_dockerfile_mock:
                 with patch(
-                    'generators.compose.compose_service.'
+                    'ci_cd_forge.generators.compose.compose_service.'
                     'generate_project_compose',
                     return_value=compose_path,
                 ):

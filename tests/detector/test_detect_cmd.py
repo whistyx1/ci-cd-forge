@@ -4,7 +4,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from detect.detect_cmd import detect_cmd
+from ci_cd_forge.detect.detect_cmd import detect_cmd
 
 
 class TestDetectCmd(unittest.TestCase):

@@ -1,8 +1,8 @@
 import unittest
 
-from parse.parse_requirements import parse_requirements
-from parse.parse_gemfile import parse_gemfile
-from parse.parse_go_mod import parse_go_mod
+from ci_cd_forge.parse.parse_requirements import parse_requirements
+from ci_cd_forge.parse.parse_gemfile import parse_gemfile
+from ci_cd_forge.parse.parse_go_mod import parse_go_mod
 
 
 class TestTextParsers(unittest.TestCase):

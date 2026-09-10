@@ -1,6 +1,6 @@
 import unittest
 
-from parse.parse_cargo_toml import parse_cargo_toml
+from ci_cd_forge.parse.parse_cargo_toml import parse_cargo_toml
 
 
 class TestTomlParser(unittest.TestCase):

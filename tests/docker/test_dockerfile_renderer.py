@@ -1,6 +1,6 @@
 import unittest
 
-from generators.docker.dockerfile_renderer import generate_dockerfile
+from ci_cd_forge.generators.docker.dockerfile_renderer import generate_dockerfile
 
 
 class TestDockerfileRenderer(unittest.TestCase):

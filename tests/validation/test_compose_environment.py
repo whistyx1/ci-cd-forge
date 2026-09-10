@@ -1,6 +1,6 @@
 import unittest
 
-from validators.compose_environment import validate_compose_environment
+from ci_cd_forge.validators.compose_environment import validate_compose_environment
 
 
 class TestComposeEnvironmentValidation(unittest.TestCase):

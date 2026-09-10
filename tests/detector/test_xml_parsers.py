@@ -1,7 +1,7 @@
 import unittest
 
-from parse.parse_pom_xml import parse_pom_xml
-from parse.parse_csproj import parse_csproj
+from ci_cd_forge.parse.parse_pom_xml import parse_pom_xml
+from ci_cd_forge.parse.parse_csproj import parse_csproj
 
 
 class TestXmlParsers(unittest.TestCase):

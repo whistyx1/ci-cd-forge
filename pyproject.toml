@@ -8,17 +8,14 @@ authors = [{ name = "whistyx1" }]
 dependencies = ["PyYAML>=6.0,<7.0"]
 
 [project.scripts]
-ci-cd-forge = "main:main"
+ci-cd-forge = "ci_cd_forge.main:main"
 
 [build-system]
 requires = ["setuptools>=77.0.3"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-py-modules = ["main"]
-
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["cli*", "detect*", "generators*", "parse*", "validators*"]
+include = ["ci_cd_forge*"]
 exclude = ["tests*"]
 namespaces = false

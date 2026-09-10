@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from generators.docker.recommendation_resolver import (
+from ci_cd_forge.generators.docker.recommendation_resolver import (
     resolve_docker_recommendation,
 )
 

@@ -3,7 +3,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from generators.docker.generator import generate_project_dockerfile
+from ci_cd_forge.generators.docker.generator import generate_project_dockerfile
 
 
 class TestDockerfileGenerator(unittest.TestCase):
@@ -26,7 +26,7 @@ class TestDockerfileGenerator(unittest.TestCase):
             }
 
             with patch(
-                'generators.docker.generator.write_dockerignore',
+                'ci_cd_forge.generators.docker.generator.write_dockerignore',
                 side_effect=OSError('write failed'),
             ):
                 with self.assertRaisesRegex(OSError, 'write failed'):
@@ -61,7 +61,7 @@ class TestDockerfileGenerator(unittest.TestCase):
             }
 
             with patch(
-                'generators.docker.generator.write_dockerignore',
+                'ci_cd_forge.generators.docker.generator.write_dockerignore',
                 side_effect=OSError('write failed'),
             ):
                 with self.assertRaisesRegex(OSError, 'write failed'):

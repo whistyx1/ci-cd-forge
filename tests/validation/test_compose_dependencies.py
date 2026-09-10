@@ -1,6 +1,6 @@
 import unittest
 
-from validators.compose_dependencies import validate_compose_dependencies
+from ci_cd_forge.validators.compose_dependencies import validate_compose_dependencies
 
 
 class TestComposeDependenciesValidation(unittest.TestCase):

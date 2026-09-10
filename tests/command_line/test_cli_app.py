@@ -5,15 +5,15 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import call, patch
 
-from cli.app import (
+from ci_cd_forge.cli.app import (
     _review_project_docker_options,
     _update_start_command_port,
     _verify_docker_images_if_requested,
     _verify_docker_option_images,
     run_cli,
 )
-from cli.display import display_created_paths
-from cli.prompts import (
+from ci_cd_forge.cli.display import display_created_paths
+from ci_cd_forge.cli.prompts import (
     ask_port,
     ask_required_value,
     ask_start_command,
@@ -27,7 +27,7 @@ from cli.prompts import (
 class TestCliApp(unittest.TestCase):
     def setUp(self):
         self.docker_options_patcher = patch(
-            'cli.app._review_project_docker_options',
+            'ci_cd_forge.cli.app._review_project_docker_options',
             side_effect=self._docker_options,
         )
         self.review_docker_options_mock = (
@@ -36,7 +36,7 @@ class TestCliApp(unittest.TestCase):
         self.addCleanup(self.docker_options_patcher.stop)
 
         self.verify_images_patcher = patch(
-            'cli.app._verify_docker_images_if_requested',
+            'ci_cd_forge.cli.app._verify_docker_images_if_requested',
         )
         self.verify_images_mock = self.verify_images_patcher.start()
         self.addCleanup(self.verify_images_patcher.stop)
@@ -132,15 +132,15 @@ class TestCliApp(unittest.TestCase):
         }
 
         with patch(
-            'cli.app.resolve_docker_recommendation',
+            'ci_cd_forge.cli.app.resolve_docker_recommendation',
             return_value={
                 'options': recommended_options,
                 'requires_confirmation': [],
             },
         ) as recommendation_mock:
-            with patch('cli.app.display_docker_options') as display_mock:
+            with patch('ci_cd_forge.cli.app.display_docker_options') as display_mock:
                 with patch(
-                    'cli.app.review_docker_options',
+                    'ci_cd_forge.cli.app.review_docker_options',
                     return_value=reviewed_values.copy(),
                 ) as review_mock:
                     result = _review_project_docker_options(
@@ -184,7 +184,7 @@ class TestCliApp(unittest.TestCase):
         }
 
         with patch(
-            'cli.app.docker_image_exists',
+            'ci_cd_forge.cli.app.docker_image_exists',
             return_value=True,
         ) as image_exists_mock:
             result = _verify_docker_option_images(options)
@@ -204,7 +204,7 @@ class TestCliApp(unittest.TestCase):
         }
 
         with patch(
-            'cli.app.docker_image_exists',
+            'ci_cd_forge.cli.app.docker_image_exists',
             return_value=True,
         ) as image_exists_mock:
             _verify_docker_option_images(options)
@@ -226,7 +226,7 @@ class TestCliApp(unittest.TestCase):
         }
 
         with patch(
-            'cli.app.docker_image_exists',
+            'ci_cd_forge.cli.app.docker_image_exists',
             return_value=False,
         ):
             with self.assertRaisesRegex(
@@ -245,9 +245,9 @@ class TestCliApp(unittest.TestCase):
             },
         ]
 
-        with patch('cli.app.confirm', return_value=False) as confirm_mock:
+        with patch('ci_cd_forge.cli.app.confirm', return_value=False) as confirm_mock:
             with patch(
-                'cli.app._verify_docker_option_images',
+                'ci_cd_forge.cli.app._verify_docker_option_images',
             ) as verify_mock:
                 result = _verify_docker_images_if_requested(options)
 
@@ -275,9 +275,9 @@ class TestCliApp(unittest.TestCase):
         ]
         stdout = StringIO()
 
-        with patch('cli.app.confirm', return_value=True):
+        with patch('ci_cd_forge.cli.app.confirm', return_value=True):
             with patch(
-                'cli.app._verify_docker_option_images',
+                'ci_cd_forge.cli.app._verify_docker_option_images',
             ) as verify_mock:
                 with redirect_stdout(stdout):
                     _verify_docker_images_if_requested(options)
@@ -379,7 +379,7 @@ class TestCliApp(unittest.TestCase):
             project_path = Path(temp_dir)
 
             with patch(
-                'cli.prompts.resolve_docker_recommendation',
+                'ci_cd_forge.cli.prompts.resolve_docker_recommendation',
                 return_value={
                     'options': {},
                     'requires_confirmation': [
@@ -591,7 +591,7 @@ class TestCliApp(unittest.TestCase):
                 side_effect=[f'  {temp_dir}  ', 'n'],
             ):
                 with patch(
-                    'cli.app.create_stack',
+                    'ci_cd_forge.cli.app.create_stack',
                     return_value=detected_stack,
                 ) as create_stack_mock:
                     with redirect_stdout(stdout):
@@ -634,7 +634,7 @@ class TestCliApp(unittest.TestCase):
                 side_effect=[temp_dir, 'all'],
             ):
                 with patch(
-                    'cli.app.create_stack',
+                    'ci_cd_forge.cli.app.create_stack',
                     return_value=detected_stacks,
                 ):
                     with redirect_stdout(stdout):
@@ -668,11 +668,11 @@ class TestCliApp(unittest.TestCase):
                 side_effect=[temp_dir, '  python app.py  ', 'yes'],
             ):
                 with patch(
-                    'cli.app.create_stack',
+                    'ci_cd_forge.cli.app.create_stack',
                     return_value=[detected_stack],
                 ):
                     with patch(
-                        'cli.app.generate_recommended_dockerfile',
+                        'ci_cd_forge.cli.app.generate_recommended_dockerfile',
                         return_value=expected_path,
                     ) as generate_dockerfile_mock:
                         with redirect_stdout(stdout):
@@ -700,11 +700,11 @@ class TestCliApp(unittest.TestCase):
                 side_effect=[temp_dir, '   '],
             ):
                 with patch(
-                    'cli.app.create_stack',
+                    'ci_cd_forge.cli.app.create_stack',
                     return_value=[detected_stack],
                 ):
                     with patch(
-                        'cli.app.generate_recommended_dockerfile',
+                        'ci_cd_forge.cli.app.generate_recommended_dockerfile',
                     ) as generate_dockerfile_mock:
                         with redirect_stdout(stdout):
                             result = run_cli()
@@ -734,11 +734,11 @@ class TestCliApp(unittest.TestCase):
                 side_effect=[temp_dir, '8000', 'yes'],
             ):
                 with patch(
-                    'cli.app.create_stack',
+                    'ci_cd_forge.cli.app.create_stack',
                     return_value=[detected_stack],
                 ):
                     with patch(
-                        'cli.app.generate_recommended_dockerfile',
+                        'ci_cd_forge.cli.app.generate_recommended_dockerfile',
                         return_value=expected_path,
                     ) as generate_dockerfile_mock:
                         with redirect_stdout(stdout):
@@ -789,7 +789,7 @@ class TestCliApp(unittest.TestCase):
                 ],
             ):
                 with patch(
-                    'cli.app.create_stack',
+                    'ci_cd_forge.cli.app.create_stack',
                     return_value=detected_stacks,
                 ):
                     with redirect_stdout(stdout):
@@ -824,11 +824,11 @@ class TestCliApp(unittest.TestCase):
                 side_effect=[temp_dir, 'yes'],
             ):
                 with patch(
-                    'cli.app.create_stack',
+                    'ci_cd_forge.cli.app.create_stack',
                     return_value=[detected_stack],
                 ):
                     with patch(
-                        'cli.app.generate_recommended_dockerfile',
+                        'ci_cd_forge.cli.app.generate_recommended_dockerfile',
                         return_value=expected_path,
                     ) as generate_dockerfile_mock:
                         with redirect_stdout(stdout):
@@ -894,15 +894,15 @@ class TestCliApp(unittest.TestCase):
                 side_effect=[temp_dir, '1', 'yes'],
             ):
                 with patch(
-                    'cli.app.create_stack',
+                    'ci_cd_forge.cli.app.create_stack',
                     return_value=detected_stacks,
                 ):
                     with patch(
-                        'cli.app.generate_recommended_dockerfile',
+                        'ci_cd_forge.cli.app.generate_recommended_dockerfile',
                         return_value=dockerfile_path,
                     ) as generate_dockerfile_mock:
                         with patch(
-                            'cli.app.generate_recommended_compose',
+                            'ci_cd_forge.cli.app.generate_recommended_compose',
                         ) as generate_compose_mock:
                             with redirect_stdout(stdout):
                                 result = run_cli()
@@ -939,11 +939,11 @@ class TestCliApp(unittest.TestCase):
                 side_effect=[temp_dir, 'yes', 'yes', 'api'],
             ):
                 with patch(
-                    'cli.app.create_stack',
+                    'ci_cd_forge.cli.app.create_stack',
                     return_value=[detected_stack],
                 ):
                     with patch(
-                        'cli.app.generate_recommended_dockerfile',
+                        'ci_cd_forge.cli.app.generate_recommended_dockerfile',
                         return_value=expected_path,
                     ) as generate_dockerfile_mock:
                         with redirect_stdout(stdout):
@@ -987,11 +987,11 @@ class TestCliApp(unittest.TestCase):
                 side_effect=[temp_dir, 'yes', 'no'],
             ):
                 with patch(
-                    'cli.app.create_stack',
+                    'ci_cd_forge.cli.app.create_stack',
                     return_value=[detected_stack],
                 ):
                     with patch(
-                        'cli.app.generate_recommended_dockerfile',
+                        'ci_cd_forge.cli.app.generate_recommended_dockerfile',
                     ) as generate_dockerfile_mock:
                         with redirect_stdout(stdout):
                             result = run_cli()
@@ -1029,11 +1029,11 @@ class TestCliApp(unittest.TestCase):
                 side_effect=[temp_dir, 'yes', 'yes'],
             ):
                 with patch(
-                    'cli.app.create_stack',
+                    'ci_cd_forge.cli.app.create_stack',
                     return_value=[detected_stack],
                 ):
                     with patch(
-                        'cli.app.generate_recommended_dockerfile',
+                        'ci_cd_forge.cli.app.generate_recommended_dockerfile',
                         return_value=dockerfile_path,
                     ) as generate_dockerfile_mock:
                         with redirect_stdout(stdout):
@@ -1081,11 +1081,11 @@ class TestCliApp(unittest.TestCase):
                 side_effect=[temp_dir, 'all', 'y'],
             ):
                 with patch(
-                    'cli.app.create_stack',
+                    'ci_cd_forge.cli.app.create_stack',
                     return_value=detected_stacks,
                 ):
                     with patch(
-                        'cli.app.generate_recommended_compose',
+                        'ci_cd_forge.cli.app.generate_recommended_compose',
                         return_value=expected_path,
                     ) as generate_compose_mock:
                         with redirect_stdout(stdout):
@@ -1155,18 +1155,18 @@ class TestCliApp(unittest.TestCase):
                 side_effect=[temp_dir, 'all', 'yes'],
             ):
                 with patch(
-                    'cli.app.create_stack',
+                    'ci_cd_forge.cli.app.create_stack',
                     return_value=detected_stacks,
                 ):
                     with patch(
-                        'cli.app.choose_strategies',
+                        'ci_cd_forge.cli.app.choose_strategies',
                         return_value=strategies,
                     ):
                         with patch(
-                            'cli.app.confirm_multistage_options',
+                            'ci_cd_forge.cli.app.confirm_multistage_options',
                         ) as confirm_multistage_mock:
                             with patch(
-                                'cli.app.generate_recommended_compose',
+                                'ci_cd_forge.cli.app.generate_recommended_compose',
                                 return_value=expected_path,
                             ) as generate_compose_mock:
                                 with redirect_stdout(stdout):
@@ -1223,11 +1223,11 @@ class TestCliApp(unittest.TestCase):
                 side_effect=[temp_dir, 'all', 'yes', 'no'],
             ):
                 with patch(
-                    'cli.app.create_stack',
+                    'ci_cd_forge.cli.app.create_stack',
                     return_value=detected_stacks,
                 ):
                     with patch(
-                        'cli.app.generate_recommended_compose',
+                        'ci_cd_forge.cli.app.generate_recommended_compose',
                     ) as generate_compose_mock:
                         with redirect_stdout(stdout):
                             result = run_cli()
@@ -1282,11 +1282,11 @@ class TestCliApp(unittest.TestCase):
                 side_effect=[temp_dir, 'all', 'yes', 'yes'],
             ):
                 with patch(
-                    'cli.app.create_stack',
+                    'ci_cd_forge.cli.app.create_stack',
                     return_value=detected_stacks,
                 ):
                     with patch(
-                        'cli.app.generate_recommended_compose',
+                        'ci_cd_forge.cli.app.generate_recommended_compose',
                         return_value=compose_path,
                     ) as generate_compose_mock:
                         with redirect_stdout(stdout):
@@ -1331,11 +1331,11 @@ class TestCliApp(unittest.TestCase):
                 side_effect=[temp_dir, 'yes'],
             ):
                 with patch(
-                    'cli.app.create_stack',
+                    'ci_cd_forge.cli.app.create_stack',
                     return_value=[detected_stack],
                 ):
                     with patch(
-                        'cli.app.generate_recommended_dockerfile',
+                        'ci_cd_forge.cli.app.generate_recommended_dockerfile',
                         side_effect=ValueError(
                             'start_command requires confirmation',
                         ),

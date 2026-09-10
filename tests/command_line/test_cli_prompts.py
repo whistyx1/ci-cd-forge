@@ -3,7 +3,7 @@ from contextlib import redirect_stdout
 from io import StringIO
 from unittest.mock import patch
 
-from cli.prompts import review_docker_options
+from ci_cd_forge.cli.prompts import review_docker_options
 
 
 class TestCliPrompts(unittest.TestCase):

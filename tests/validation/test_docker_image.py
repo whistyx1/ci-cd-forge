@@ -2,14 +2,14 @@ import subprocess
 import unittest
 from unittest.mock import patch
 
-from generators.docker.config_validator import validate_dockerfile_config
-from validators.docker_image import docker_image_exists, validate_docker_image
+from ci_cd_forge.generators.docker.config_validator import validate_dockerfile_config
+from ci_cd_forge.validators.docker_image import docker_image_exists, validate_docker_image
 
 
 class TestDockerImageValidation(unittest.TestCase):
     def test_returns_true_when_docker_manifest_exists(self):
         with patch(
-            'validators.docker_image.subprocess.run',
+            'ci_cd_forge.validators.docker_image.subprocess.run',
         ) as run_mock:
             run_mock.return_value.returncode = 0
             run_mock.return_value.stderr = ''
@@ -28,7 +28,7 @@ class TestDockerImageValidation(unittest.TestCase):
 
     def test_returns_false_when_docker_manifest_is_unavailable(self):
         with patch(
-            'validators.docker_image.subprocess.run',
+            'ci_cd_forge.validators.docker_image.subprocess.run',
         ) as run_mock:
             run_mock.return_value.returncode = 1
             run_mock.return_value.stderr = (
@@ -41,7 +41,7 @@ class TestDockerImageValidation(unittest.TestCase):
 
     def test_reports_docker_registry_or_network_error(self):
         with patch(
-            'validators.docker_image.subprocess.run',
+            'ci_cd_forge.validators.docker_image.subprocess.run',
         ) as run_mock:
             run_mock.return_value.returncode = 1
             run_mock.return_value.stderr = (
@@ -56,7 +56,7 @@ class TestDockerImageValidation(unittest.TestCase):
 
     def test_reports_unknown_docker_error_when_stderr_is_empty(self):
         with patch(
-            'validators.docker_image.subprocess.run',
+            'ci_cd_forge.validators.docker_image.subprocess.run',
         ) as run_mock:
             run_mock.return_value.returncode = 1
             run_mock.return_value.stderr = ''
@@ -69,7 +69,7 @@ class TestDockerImageValidation(unittest.TestCase):
 
     def test_reports_missing_docker_cli(self):
         with patch(
-            'validators.docker_image.subprocess.run',
+            'ci_cd_forge.validators.docker_image.subprocess.run',
             side_effect=FileNotFoundError,
         ):
             with self.assertRaisesRegex(
@@ -85,7 +85,7 @@ class TestDockerImageValidation(unittest.TestCase):
         )
 
         with patch(
-            'validators.docker_image.subprocess.run',
+            'ci_cd_forge.validators.docker_image.subprocess.run',
             side_effect=timeout_error,
         ):
             with self.assertRaisesRegex(
@@ -96,7 +96,7 @@ class TestDockerImageValidation(unittest.TestCase):
 
     def test_rejects_invalid_reference_before_running_docker(self):
         with patch(
-            'validators.docker_image.subprocess.run',
+            'ci_cd_forge.validators.docker_image.subprocess.run',
         ) as run_mock:
             with self.assertRaisesRegex(ValueError, 'base_image'):
                 docker_image_exists('invalid image')

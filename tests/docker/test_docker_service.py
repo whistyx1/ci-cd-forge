@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from generators.docker.service import generate_recommended_dockerfile
+from ci_cd_forge.generators.docker.service import generate_recommended_dockerfile
 
 
 class TestDockerService(unittest.TestCase):

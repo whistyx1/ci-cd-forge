@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from generators.file_transaction import FileTransaction
+from ci_cd_forge.generators.file_transaction import FileTransaction
 
 
 class TestFileTransaction(unittest.TestCase):

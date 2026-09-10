@@ -1,6 +1,6 @@
 import unittest
 
-from generators.docker.config_validator import validate_dockerfile_config
+from ci_cd_forge.generators.docker.config_validator import validate_dockerfile_config
 
 
 class TestDockerfileConfigValidator(unittest.TestCase):

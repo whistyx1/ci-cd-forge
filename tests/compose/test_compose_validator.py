@@ -1,6 +1,6 @@
 import unittest
 
-from generators.compose.compose_validator import validate_compose
+from ci_cd_forge.generators.compose.compose_validator import validate_compose
 
 
 class TestComposeValidator(unittest.TestCase):

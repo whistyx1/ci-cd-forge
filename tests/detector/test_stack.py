@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from detect.stack import create_stack
+from ci_cd_forge.detect.stack import create_stack
 
 
 class TestCreateStack(unittest.TestCase):

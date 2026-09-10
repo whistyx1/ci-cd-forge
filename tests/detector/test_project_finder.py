@@ -2,7 +2,7 @@ import unittest
 from tempfile import TemporaryDirectory
 from pathlib import Path
 
-from detect.project_finder import find_projects
+from ci_cd_forge.detect.project_finder import find_projects
 
 
 class TestFindProject(unittest.TestCase):

@@ -1,6 +1,6 @@
 import unittest
 
-from generators.docker.dockerfile_resolver import resolve_dockerfile_config
+from ci_cd_forge.generators.docker.dockerfile_resolver import resolve_dockerfile_config
 
 
 class TestDockerfileResolver(unittest.TestCase):

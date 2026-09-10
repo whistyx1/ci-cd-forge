@@ -3,11 +3,11 @@ from contextlib import redirect_stdout
 from io import StringIO
 from unittest.mock import patch
 
-from main import main
+from ci_cd_forge.main import main
 
 
 class TestMain(unittest.TestCase):
-    @patch('main.run_cli', return_value=0)
+    @patch('ci_cd_forge.main.run_cli', return_value=0)
     def test_returns_cli_exit_code(self, run_cli_mock):
         self.assertEqual(main(), 0)
         run_cli_mock.assert_called_once_with()
@@ -18,7 +18,7 @@ class TestMain(unittest.TestCase):
                 stdout = StringIO()
 
                 with (
-                    patch('main.run_cli', side_effect=error),
+                    patch('ci_cd_forge.main.run_cli', side_effect=error),
                     redirect_stdout(stdout),
                 ):
                     result = main()

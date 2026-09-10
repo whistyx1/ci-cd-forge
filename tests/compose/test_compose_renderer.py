@@ -2,7 +2,7 @@ import unittest
 
 import yaml
 
-from generators.compose.compose_renderer import render_compose
+from ci_cd_forge.generators.compose.compose_renderer import render_compose
 
 
 class TestComposeRenderer(unittest.TestCase):

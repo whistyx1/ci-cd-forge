@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from generators.docker.dockerignore_writer import (
+from ci_cd_forge.generators.docker.dockerignore_writer import (
     DOCKERIGNORE_TEMPLATE,
     write_dockerignore,
 )

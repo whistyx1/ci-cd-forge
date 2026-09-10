@@ -1,12 +1,4 @@
-from cli.app import run_cli
-
-
-def main() -> int:
-    try:
-        return run_cli()
-    except (EOFError, KeyboardInterrupt):
-        print('Operation canceled by user.')
-        return 130
+from ci_cd_forge.main import main
 
 
 if __name__ == '__main__':

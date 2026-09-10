@@ -1,8 +1,8 @@
 import unittest
 import json
 
-from parse.parse_package_json import parse_package_json
-from parse.parse_composer_json import parse_composer_json
+from ci_cd_forge.parse.parse_package_json import parse_package_json
+from ci_cd_forge.parse.parse_composer_json import parse_composer_json
 
 
 class TestParseJson(unittest.TestCase):
