@@ -15,3 +15,4 @@ class DockerfileConfig(TypedDict):
     runtime_image: NotRequired[str]
     artifact_source: NotRequired[str]
     artifact_destination: NotRequired[str]
+    install_after_copy: NotRequired[bool]

@@ -24,6 +24,7 @@ def _generate_multistage_dockerfile(config: DockerfileConfig) -> str:
     port = config.get('port')
     start_command = config.get('start_command')
     build_command = config.get('build_command')
+    install_after_copy = config.get('install_after_copy', False)
     lines = [
         f'FROM {base_image} AS builder',
         f'WORKDIR {workdir}',
@@ -36,9 +37,13 @@ def _generate_multistage_dockerfile(config: DockerfileConfig) -> str:
         destination = '.mvn' if dependency_file == '.mvn' else '.'
         lines.append(f'COPY {dependency_file} {destination}')
 
-    if install_command:
+    if install_command and not install_after_copy:
         lines.append(f'RUN {install_command}')
+
     lines.append('COPY . .')
+
+    if install_command and install_after_copy:
+        lines.append(f'RUN {install_command}')
 
     if build_command:
         lines.append(f'RUN {build_command}')
@@ -81,6 +86,7 @@ def generate_dockerfile(config: DockerfileConfig) -> str:
     start_command = config.get('start_command')
     port = config.get('port')
     setup_command = config.get('setup_command')
+    install_after_copy = config.get('install_after_copy', False)
     lines = [
         f'FROM {base_image}',
         f'WORKDIR {workdir}',
@@ -93,9 +99,13 @@ def generate_dockerfile(config: DockerfileConfig) -> str:
         destination = '.mvn' if dependency_file == '.mvn' else '.'
         lines.append(f'COPY {dependency_file} {destination}')
 
-    if install_command:
+    if install_command and not install_after_copy:
         lines.append(f'RUN {install_command}')
+
     lines.append('COPY . .')
+
+    if install_command and install_after_copy:
+        lines.append(f'RUN {install_command}')
 
     if build_command:
         lines.append(f'RUN {build_command}')

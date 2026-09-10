@@ -60,4 +60,11 @@ def resolve_dockerfile_config(
 
     if setup_command is not None:
         config['setup_command'] = setup_command
+
+    if (
+        stack['language(s)'] == 'PHP'
+        and isinstance(install_command, str)
+        and install_command.startswith('composer install')
+    ):
+        config['install_after_copy'] = True
     return config
