@@ -61,6 +61,14 @@ git clone https://github.com/whistyx1/ci-cd-forge.git
 cd ci-cd-forge
 ```
 
+Run the commands below from the repository root—the directory containing
+`pyproject.toml`. If you already have the repository on your computer, first
+change to that directory, for example:
+
+```text
+cd path/to/ci-cd-forge
+```
+
 ### macOS and Linux
 
 ```bash
